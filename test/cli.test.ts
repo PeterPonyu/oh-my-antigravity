@@ -8,6 +8,7 @@ import { join } from "node:path";
 const repoRoot = new URL("..", import.meta.url);
 const projectModule = await import(new URL("src/project.ts", repoRoot).href);
 const { PROJECT } = projectModule;
+const { formatCliError } = await import(new URL("src/lib/errors.ts", repoRoot).href);
 
 function runCli(...args: string[]) {
   return execFileSync(process.execPath, ["src/cli.ts", ...args], {
@@ -222,4 +223,88 @@ test("session list/show/clear round-trips a loop session", () => {
   } finally {
     cleanup();
   }
+});
+
+test("loop rejects empty prompts without writing a session", () => {
+  const { home, cleanup } = withTempHome();
+  try {
+    const res = runCliHome(home, "loop", "--json", "   ");
+    assert.equal(res.status, 2);
+    assert.match(res.stderr, /prompt must be non-empty/);
+    assert.equal(existsSync(join(home, "state", "sessions")), false);
+  } finally {
+    cleanup();
+  }
+});
+
+test("session ids remain unique for same-millisecond starts", async () => {
+  const { newSessionId } = await import(new URL("src/lib/session.ts", repoRoot).href);
+  const now = new Date("2026-05-28T00:00:00.000Z");
+  assert.notEqual(newSessionId(now), newSessionId(now));
+});
+
+test("doctor reports malformed config with path context", () => {
+  const { home, cleanup } = withTempHome();
+  try {
+    runCliHome(home, "init");
+    const configPath = join(home, "config.json");
+    execFileSync(process.execPath, ["-e", `require('fs').writeFileSync(${JSON.stringify(configPath)}, '{bad')`]);
+    const res = runCliHome(home, "doctor", "--json");
+    assert.equal(res.status, 1);
+    assert.match(res.stdout, /failed to parse/);
+    assert.match(res.stdout, /config\.json/);
+  } finally {
+    cleanup();
+  }
+});
+
+test("config validates required identity and private scaffold keys", async () => {
+  const { validateConfig, defaultConfig } = await import(new URL("src/lib/config.ts", repoRoot).href);
+  const missing = { ...defaultConfig() } as Record<string, unknown>;
+  delete missing.version;
+  delete missing.maturity;
+  delete missing.privateScaffold;
+  const errors = validateConfig(missing);
+  assert.ok(errors.some((error: string) => error.includes("version")));
+  assert.ok(errors.some((error: string) => error.includes("maturity")));
+  assert.ok(errors.some((error: string) => error.includes("privateScaffold")));
+});
+
+test("config set skills makes persisted skills reachable from CLI", () => {
+  const { home, cleanup } = withTempHome();
+  try {
+    runCliHome(home, "init");
+    const set = runCliHome(home, "config", "set", "skills", "deep-interview,team");
+    assert.equal(set.status, 0, set.stderr);
+    const skills = JSON.parse(runCliHome(home, "skills", "--json").stdout) as Array<{ name: string; enabled: boolean }>;
+    assert.deepEqual(skills.filter((row) => row.enabled).map((row) => row.name), ["deep-interview", "team"]);
+    const bad = runCliHome(home, "config", "set", "skills", "deep-interview,missing");
+    assert.equal(bad.status, 2);
+    assert.match(bad.stderr, /unknown entries/);
+  } finally {
+    cleanup();
+  }
+});
+
+test("session list reports corrupted metadata path instead of a raw crash", () => {
+  const { home, cleanup } = withTempHome();
+  try {
+    runCliHome(home, "loop", "demo");
+    const sessionsDir = join(home, "state", "sessions");
+    const id = execFileSync("bash", ["-lc", `ls ${JSON.stringify(sessionsDir)} | head -1`], { encoding: "utf8" }).trim();
+    execFileSync(process.execPath, ["-e", `require('fs').writeFileSync(${JSON.stringify(join(sessionsDir, id, "metadata.json"))}, '{bad')`]);
+    const res = runCliHome(home, "session", "list", "--json");
+    assert.equal(res.status, 1);
+    assert.match(res.stderr, /failed to read session metadata/);
+    assert.match(res.stderr, /metadata\.json/);
+  } finally {
+    cleanup();
+  }
+});
+
+
+test("formatCliError preserves stacks and serializes non-Error throws", () => {
+  const error = new Error("boom");
+  assert.match(formatCliError(error), /Error: boom/);
+  assert.equal(formatCliError({ code: "EACCES", path: "/etc/foo" }), '{"code":"EACCES","path":"/etc/foo"}');
 });

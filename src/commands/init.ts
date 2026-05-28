@@ -9,20 +9,29 @@ export function initCommand(args: string[], env = process.env): number {
   const force = args.includes("--force");
   const home = homeDir(env);
 
-  mkdirSync(stateDir(env), { recursive: true });
-  mkdirSync(logsDir(env), { recursive: true });
+  try {
+    mkdirSync(stateDir(env), { recursive: true });
+    mkdirSync(logsDir(env), { recursive: true });
 
-  const cfgPath = configPath(env);
-  const existed = existsSync(cfgPath);
-  if (!existed || force) {
-    writeConfig(defaultConfig(), env);
-  }
+    const cfgPath = configPath(env);
+    const existed = existsSync(cfgPath);
+    if (!existed || force) {
+      writeConfig(defaultConfig(), env);
+      if (!existsSync(cfgPath)) {
+        throw new Error(`post-condition failed: config.json was not written to ${cfgPath}`);
+      }
+    }
 
-  console.log(`Initialized oh-my-antigrav home at ${home}`);
-  if (existed && !force) {
-    console.log("Kept existing config.json (use --force to overwrite).");
-  } else {
-    console.log(`Wrote ${cfgPath}`);
+    console.log(`Initialized oh-my-antigrav home at ${home}`);
+    if (existed && !force) {
+      console.log("Kept existing config.json (use --force to overwrite).");
+    } else {
+      console.log(`Wrote ${cfgPath}`);
+    }
+    return 0;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`init: failed to initialize ${home}: ${message}`);
+    return 1;
   }
-  return 0;
 }

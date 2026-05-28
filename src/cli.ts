@@ -7,6 +7,7 @@ import { configCommand } from "./commands/config.ts";
 import { skillsCommand } from "./commands/skills.ts";
 import { loopCommand } from "./commands/loop.ts";
 import { sessionCommand } from "./commands/session.ts";
+import { formatCliError } from "./lib/errors.ts";
 
 function printHelp(): void {
   console.log(`${PROJECT.displayName} ${PROJECT.version}
@@ -82,6 +83,6 @@ async function main(): Promise<number> {
 main().then((code) => {
   process.exitCode = code;
 }).catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : String(error));
+  console.error(formatCliError(error));
   process.exitCode = 1;
 });

@@ -1,4 +1,5 @@
 import { mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { stateDir } from "./paths.ts";
 import { PROJECT, SKILLS } from "../project.ts";
@@ -26,7 +27,17 @@ function sessionsRoot(env: Env): string {
 
 // Sortable, filesystem-safe id derived from the creation time.
 export function newSessionId(now: Date = new Date()): string {
-  return now.toISOString().replace(/[:.]/g, "-");
+  const stamp = now.toISOString().replace(/[:.]/g, "-");
+  return `${stamp}-${randomUUID().slice(0, 8)}`;
+}
+
+function readSessionFile(path: string): Session {
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as Session;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`failed to read session metadata ${path}: ${message}`);
+  }
 }
 
 function renderPlan(session: Session): string {
@@ -70,13 +81,13 @@ export function listSessions(env: Env = process.env): Session[] {
   return readdirSync(root)
     .map((id) => join(root, id, "metadata.json"))
     .filter((path) => existsSync(path))
-    .map((path) => JSON.parse(readFileSync(path, "utf8")) as Session)
+    .map((path) => readSessionFile(path))
     .sort((a, b) => a.id.localeCompare(b.id));
 }
 
 export function readSession(id: string, env: Env = process.env): Session | null {
   const path = join(sessionsRoot(env), id, "metadata.json");
-  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as Session) : null;
+  return existsSync(path) ? readSessionFile(path) : null;
 }
 
 export function clearSessions(env: Env = process.env): number {

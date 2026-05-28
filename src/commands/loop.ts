@@ -7,7 +7,11 @@ import { createSession } from "../lib/session.ts";
 // then point the user at how to inspect it. Works without a prior `init`.
 export function loopCommand(args: string[], env = process.env): number {
   const json = args.includes("--json");
-  const prompt = args.filter((arg) => !arg.startsWith("--")).join(" ");
+  const prompt = args.filter((arg) => !arg.startsWith("--")).join(" ").trim();
+  if (prompt === "") {
+    console.error("loop: prompt must be non-empty");
+    return 2;
+  }
 
   mkdirSync(stateDir(env), { recursive: true });
   const session = createSession(prompt, env);
