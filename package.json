@@ -23,17 +23,27 @@
     "local-first"
   ],
   "bin": {
-    "antigravity": "src/cli.ts"
+    "antigravity": "dist/cli.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "start": "node ./src/cli.ts",
     "cli:help": "node ./src/cli.ts --help",
     "cli:status": "node ./src/cli.ts status",
     "cli:version": "node ./src/cli.ts --version",
+    "build": "tsc -p tsconfig.build.json && node -e \"require('fs').chmodSync('dist/cli.js', 0o755)\"",
+    "prepack": "npm run build",
     "typecheck": "tsc --noEmit",
     "lint": "node ./scripts/verify.mjs --lint-only",
     "test": "node --test",
     "audit:negative": "node ./scripts/verify.mjs --audit-only",
+    "smoke:pack": "node ./scripts/pack-smoke.mjs",
     "verify": "npm run typecheck && npm run lint && npm test && npm run cli:help && npm run cli:status && npm run cli:version && npm run audit:negative"
   },
   "engines": {
