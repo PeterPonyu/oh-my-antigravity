@@ -1,6 +1,6 @@
 # Code of Conduct
 
-Antigravity is a small, experimental project. This Code of Conduct keeps it a
+oh-my-antigrav is a small, experimental project. This Code of Conduct keeps it a
 respectful place to collaborate. It is original to this repository.
 
 ## Our standard

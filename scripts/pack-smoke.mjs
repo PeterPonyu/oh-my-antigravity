@@ -38,22 +38,22 @@ try {
   const prefix = join(work, "prefix");
   run("npm", ["install", "-g", "--prefix", prefix, tarball], { stdio: "inherit" });
 
-  const bin = join(prefix, "bin", "antigravity");
+  const bin = join(prefix, "bin", "oh-my-antigrav");
   if (!existsSync(bin)) fail(`installed binary not found at ${bin}`);
 
   const home = join(work, "home");
-  const env = { ...process.env, ANTIGRAVITY_HOME: home };
+  const env = { ...process.env, OH_MY_ANTIGRAV_HOME: home };
 
   const version = run(bin, ["--version"], { env }).trim();
   if (version !== pkgVersion) fail(`installed --version "${version}" != package version "${pkgVersion}"`);
 
   const status = JSON.parse(run(bin, ["status"], { env }));
-  if (status.name !== "antigravity") fail(`installed status.name "${status.name}" unexpected`);
+  if (status.name !== "oh-my-antigrav") fail(`installed status.name "${status.name}" unexpected`);
 
   run(bin, ["init"], { env });
   run(bin, ["doctor"], { env });
 
-  console.log(`pack-smoke: OK — installed antigravity ${version} runs from ${bin}`);
+  console.log(`pack-smoke: OK — installed oh-my-antigrav ${version} runs from ${bin}`);
 } finally {
   rmSync(work, { recursive: true, force: true });
 }

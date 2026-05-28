@@ -1,6 +1,6 @@
 # Lineage
 
-Antigravity is a clean-room local scaffold.
+oh-my-antigrav is a clean-room local scaffold.
 
 Inspirations:
 - Gajae Code's small-PR launch rhythm and honest MVP framing.

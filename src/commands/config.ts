@@ -15,7 +15,7 @@ function printError(message: string): number {
   return 2;
 }
 
-// `antigravity config [show] [--json]` | `config get <key>` | `config set <key> <value>`
+// `oh-my-antigrav config [show] [--json]` | `config get <key>` | `config set <key> <value>`
 export function configCommand(args: string[], env = process.env): number {
   const sub = args[0] === "get" || args[0] === "set" ? args[0] : "show";
 
@@ -25,7 +25,7 @@ export function configCommand(args: string[], env = process.env): number {
     if (args.includes("--json")) {
       console.log(JSON.stringify(effective, null, 2));
     } else {
-      console.log(config ? `# ${configPath(env)}` : "# defaults (not initialized — run `antigravity init`)");
+      console.log(config ? `# ${configPath(env)}` : "# defaults (not initialized — run `oh-my-antigrav init`)");
       for (const [key, value] of Object.entries(effective)) {
         console.log(`${key} = ${Array.isArray(value) ? value.join(", ") : String(value)}`);
       }
@@ -34,7 +34,7 @@ export function configCommand(args: string[], env = process.env): number {
   }
 
   const config = readConfig(env);
-  if (!config) return printError("not initialized — run `antigravity init` first");
+  if (!config) return printError("not initialized — run `oh-my-antigrav init` first");
 
   if (sub === "get") {
     const key = args[1];

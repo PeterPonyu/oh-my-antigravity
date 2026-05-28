@@ -32,7 +32,7 @@ function runCliHome(home: string, ...args: string[]) {
   return spawnSync(process.execPath, ["src/cli.ts", ...args], {
     cwd: repoRoot,
     encoding: "utf8",
-    env: { ...process.env, ANTIGRAVITY_HOME: home }
+    env: { ...process.env, OH_MY_ANTIGRAV_HOME: home }
   });
 }
 
@@ -41,13 +41,13 @@ function packageVersion(): string {
   return JSON.parse(raw).version;
 }
 
-test("help shows Antigravity MVP identity", () => {
+test("help shows oh-my-antigrav MVP identity", () => {
   const output = runCli("--help");
-  assert.match(output, /Antigravity/);
+  assert.match(output, /oh-my-antigrav/);
   assert.match(output, new RegExp(PROJECT.loop.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(output, /Aliases:/);
-  assert.match(output, /antigravity -h \| --help \| help/);
-  assert.match(output, /antigravity -v \| --version \| version/);
+  assert.match(output, /oh-my-antigrav -h \| --help \| help/);
+  assert.match(output, /oh-my-antigrav -v \| --version \| version/);
 });
 
 test("status reports local-only private scaffold", () => {
@@ -90,14 +90,14 @@ test("status.version matches package.json#version", () => {
 test("no-arg invocation defaults to help output", () => {
   const result = spawnCli();
   assert.equal(result.status, 0, `expected exit 0, got ${result.status}: ${result.stderr}`);
-  assert.match(result.stdout, /Antigravity/);
+  assert.match(result.stdout, /oh-my-antigrav/);
   assert.match(result.stdout, /Usage:/);
 });
 
 test("unknown command writes guidance to stderr", () => {
   const result = spawnCli("not-a-real-command");
-  assert.match(result.stderr, /Unknown Antigravity command: not-a-real-command/);
-  assert.match(result.stderr, /antigravity --help/);
+  assert.match(result.stderr, /Unknown oh-my-antigrav command: not-a-real-command/);
+  assert.match(result.stderr, /oh-my-antigrav --help/);
 });
 
 test("unknown command exits with code 2", () => {

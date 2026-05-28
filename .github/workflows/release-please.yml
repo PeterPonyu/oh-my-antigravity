@@ -35,5 +35,5 @@ jobs:
           DRY_RUN_REASON: ${{ inputs.dry_run_reason }}
         run: |
           test "$PUBLISH_INTENT" = "false"
-          echo "Antigravity release lane is intentionally inert."
+          echo "oh-my-antigrav release lane is intentionally inert."
           echo "Reason: $DRY_RUN_REASON"

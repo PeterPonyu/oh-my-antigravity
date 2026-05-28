@@ -1,13 +1,13 @@
 name: Bug report
-description: Report a local Antigravity scaffold bug
+description: Report a local oh-my-antigrav scaffold bug
 labels:
   - bug
 body:
   - type: input
     id: version
     attributes:
-      label: Antigravity version
-      description: Output of `antigravity --version` (or `node src/cli.ts --version`).
+      label: oh-my-antigrav version
+      description: Output of `oh-my-antigrav --version` (or `node src/cli.ts --version`).
     validations:
       required: true
   - type: input

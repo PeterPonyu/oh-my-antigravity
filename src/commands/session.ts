@@ -5,7 +5,7 @@ function usage(message: string): number {
   return 2;
 }
 
-// `antigravity session list [--json]` | `session show <id> [--json]` | `session clear [--force]`
+// `oh-my-antigrav session list [--json]` | `session show <id> [--json]` | `session clear [--force]`
 export function sessionCommand(args: string[], env = process.env): number {
   const sub = args[0] ?? "list";
 
@@ -16,7 +16,7 @@ export function sessionCommand(args: string[], env = process.env): number {
       return 0;
     }
     if (sessions.length === 0) {
-      console.log("No sessions yet. Start one with `antigravity loop \"<prompt>\"`.");
+      console.log("No sessions yet. Start one with `oh-my-antigrav loop \"<prompt>\"`.");
       return 0;
     }
     for (const session of sessions) {

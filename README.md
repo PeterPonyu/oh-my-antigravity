@@ -1,12 +1,12 @@
-> Disclaimer: Antigravity is an experimental, beta-stage local scaffold. Expect rough edges, verify outputs, and do not treat it as a published product.
+> Disclaimer: oh-my-antigrav is an experimental, beta-stage local scaffold. Expect rough edges, verify outputs, and do not treat it as a published product.
 
-# Antigravity
+# oh-my-antigrav
 
-Antigravity is an experimental beta, clean-room MVP scaffold for a compact coding-agent harness routine.
+oh-my-antigrav is an experimental beta, clean-room MVP scaffold for a compact coding-agent harness routine.
 
 ## Story
 
-I have used larger OpenAI-style, Anthropic-style, and Codex-style harnesses long enough to see the same pattern: the useful work collapses into a small loop, while the public surface keeps trying to grow. Antigravity starts from the opposite posture. It keeps the story, defaults, release discipline, and verification pressure, but refuses to import a broad skill zoo before the product earns it.
+I have used larger OpenAI-style, Anthropic-style, and Codex-style harnesses long enough to see the same pattern: the useful work collapses into a small loop, while the public surface keeps trying to grow. oh-my-antigrav starts from the opposite posture. It keeps the story, defaults, release discipline, and verification pressure, but refuses to import a broad skill zoo before the product earns it.
 
 The first useful loop is intentionally small:
 
@@ -16,8 +16,8 @@ deep-interview -> ralplan -> team -> ultragoal
 
 ## MVP surface
 
-Antigravity provides a local-first CLI. All commands run offline and write only
-under the Antigravity home (`~/.antigravity`, or `$ANTIGRAVITY_HOME`).
+oh-my-antigrav provides a local-first CLI. All commands run offline and write only
+under the oh-my-antigrav home (`~/.oh-my-antigrav`, or `$OH_MY_ANTIGRAV_HOME`).
 
 ```bash
 node src/cli.ts --help                 # command surface
@@ -36,7 +36,7 @@ node examples/consume-status.mjs       # consume the status contract
 | Command | What it does |
 | --- | --- |
 | `status` | Prints the readiness contract (see `docs/status-contract.md`), including the resolved `home` and whether it is `initialized`. |
-| `init [--force]` | Creates `~/.antigravity` with `state/`, `logs/`, and a default `config.json`. Idempotent unless `--force`. |
+| `init [--force]` | Creates `~/.oh-my-antigrav` with `state/`, `logs/`, and a default `config.json`. Idempotent unless `--force`. |
 | `doctor [--json]` | Checks Node version, home/config validity, state writability, and loop drift; exits non-zero on failure. |
 | `config [show\|get <key>\|set <key> <value>]` | Reads or edits the local config. Only safe keys are mutable; the local-only/no-telemetry/inert-publishing guarantees are enforced on `set`. |
 | `skills [list]` | Lists the bundled loop skills (`deep-interview`, `ralplan`, `team`, `ultragoal`) and their enabled state. |
@@ -48,7 +48,7 @@ Defaults are local-only, private, no telemetry, no publishing, and a minimal com
 ## Documentation
 
 - `docs/README.md` indexes the contributor and release-readiness docs.
-- `docs/status-contract.md` documents the `antigravity status` JSON schema.
+- `docs/status-contract.md` documents the `oh-my-antigrav status` JSON schema.
 - `examples/consume-status.mjs` shows a script consuming the status contract.
 
 ## Development

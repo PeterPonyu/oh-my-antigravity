@@ -11,16 +11,16 @@ export const SKILLS: readonly Skill[] = Object.freeze([
 ]);
 
 export const PROJECT = Object.freeze({
-  name: "antigravity",
-  displayName: "Antigravity",
+  name: "oh-my-antigrav",
+  displayName: "oh-my-antigrav",
   version: "0.0.0-private",
   maturity: "experimental-beta",
   loop: "deep-interview -> ralplan -> team -> ultragoal",
   description: "A clean-room, local-first MVP scaffold for an agent harness routine.",
   defaults: "local-only, private, no telemetry, no publishing, minimal surface",
   // Environment override for the config/state home; falls back to ~/<homeDirName>.
-  homeEnv: "ANTIGRAVITY_HOME",
-  homeDirName: ".antigravity",
+  homeEnv: "OH_MY_ANTIGRAV_HOME",
+  homeDirName: ".oh-my-antigrav",
   // Canonical dispatchable subcommands (aliases are handled separately in help).
   commands: ["help", "version", "status", "init", "doctor", "config", "skills", "loop", "session"]
 });
