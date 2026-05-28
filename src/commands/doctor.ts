@@ -2,7 +2,7 @@ import { writeFileSync, unlinkSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { PROJECT } from "../project.ts";
 import { homeDir, stateDir } from "../lib/paths.ts";
-import { readConfig, isInitialized, validateConfig } from "../lib/config.ts";
+import { defaultConfig, readConfigStrict, isInitialized, validateConfig } from "../lib/config.ts";
 
 const MIN_NODE_MAJOR = 22;
 
@@ -27,15 +27,26 @@ export function doctorCommand(args: string[], env = process.env): number {
     ? { level: "ok", label: `Node ${process.version} (>= ${MIN_NODE_MAJOR})` }
     : { level: "fail", label: `Node ${process.version} is below the required ${MIN_NODE_MAJOR}` });
 
+  const defaultErrors = validateConfig(defaultConfig());
+  checks.push(defaultErrors.length === 0
+    ? { level: "ok", label: "default project contract passes local-first guarantees" }
+    : { level: "fail", label: `default project contract invalid: ${defaultErrors.join("; ")}` });
+
   const home = homeDir(env);
   if (isInitialized(env)) {
     checks.push({ level: "ok", label: `Home initialized at ${home}` });
-    const errors = validateConfig(readConfig(env));
+    let config = null;
+    try {
+      config = readConfigStrict(env);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      checks.push({ level: "fail", label: message });
+    }
+    const errors = validateConfig(config);
     checks.push(errors.length === 0
       ? { level: "ok", label: "config.json passes local-first guarantees" }
       : { level: "fail", label: `config.json invalid: ${errors.join("; ")}` });
 
-    const config = readConfig(env);
     if (config && config.loop !== PROJECT.loop) {
       checks.push({ level: "warn", label: `config loop drifted from the canonical "${PROJECT.loop}"` });
     }

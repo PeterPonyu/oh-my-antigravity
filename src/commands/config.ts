@@ -8,7 +8,7 @@ import {
   validateConfig
 } from "../lib/config.ts";
 
-const MUTABLE_KEYS = new Set<keyof Config>(["loop"]);
+const MUTABLE_KEYS = new Set<keyof Config>(["loop", "skills"]);
 
 function printError(message: string): number {
   console.error(`config: ${message}`);
@@ -53,13 +53,16 @@ export function configCommand(args: string[], env = process.env): number {
     return printError(`"${key}" is not settable (mutable keys: ${[...MUTABLE_KEYS].join(", ")})`);
   }
 
-  const next: Config = { ...config, [key]: value };
+  const parsedValue = key === "skills"
+    ? value.split(",").map((entry) => entry.trim()).filter(Boolean)
+    : value;
+  const next: Config = { ...config, [key]: parsedValue };
   const errors = validateConfig(next);
   if (errors.length > 0) return printError(`rejected: ${errors.join("; ")}`);
 
   writeConfig(next, env);
-  console.log(`set ${key} = ${value}`);
-  if (key === "loop" && value !== PROJECT.loop) {
+  console.log(`set ${key} = ${Array.isArray(parsedValue) ? parsedValue.join(", ") : parsedValue}`);
+  if (key === "loop" && parsedValue !== PROJECT.loop) {
     console.log(`note: loop now differs from the canonical "${PROJECT.loop}"`);
   }
   return 0;
