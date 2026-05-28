@@ -22,5 +22,5 @@ export const PROJECT = Object.freeze({
   homeEnv: "ANTIGRAVITY_HOME",
   homeDirName: ".antigravity",
   // Canonical dispatchable subcommands (aliases are handled separately in help).
-  commands: ["help", "version", "status", "init", "doctor", "config", "skills"]
+  commands: ["help", "version", "status", "init", "doctor", "config", "skills", "loop", "session"]
 });

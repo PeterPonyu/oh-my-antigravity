@@ -180,3 +180,46 @@ test("skills lists every bundled loop skill, enabled by default", () => {
     cleanup();
   }
 });
+
+test("loop creates a planned session with the loop stages and a plan file", () => {
+  const { home, cleanup } = withTempHome();
+  try {
+    const res = runCliHome(home, "loop", "--json", "build a parser");
+    assert.equal(res.status, 0, res.stderr);
+    const session = JSON.parse(res.stdout) as {
+      id: string;
+      prompt: string;
+      status: string;
+      stages: Array<{ name: string; status: string }>;
+    };
+    assert.equal(session.prompt, "build a parser");
+    assert.equal(session.status, "planned");
+    assert.deepEqual(session.stages.map((stage) => stage.name), ["deep-interview", "ralplan", "team", "ultragoal"]);
+    assert.ok(existsSync(join(home, "state", "sessions", session.id, "plan.md")), "plan.md should exist");
+  } finally {
+    cleanup();
+  }
+});
+
+test("session list/show/clear round-trips a loop session", () => {
+  const { home, cleanup } = withTempHome();
+  try {
+    const id = (JSON.parse(runCliHome(home, "loop", "--json", "demo").stdout) as { id: string }).id;
+
+    const list = runCliHome(home, "session", "list", "--json");
+    assert.equal(list.status, 0, list.stderr);
+    assert.equal((JSON.parse(list.stdout) as Array<{ id: string }>).length, 1);
+
+    const show = runCliHome(home, "session", "show", id);
+    assert.equal(show.status, 0, show.stderr);
+    assert.equal((JSON.parse(show.stdout) as { id: string }).id, id);
+
+    assert.equal(runCliHome(home, "session", "show", "missing").status, 2);
+
+    assert.match(runCliHome(home, "session", "clear").stdout, /would be removed/);
+    assert.equal(runCliHome(home, "session", "clear", "--force").status, 0);
+    assert.equal((JSON.parse(runCliHome(home, "session", "list", "--json").stdout) as unknown[]).length, 0);
+  } finally {
+    cleanup();
+  }
+});
