@@ -16,3 +16,4 @@ or npm publication is allowed until the release-blocker issues are closed.
 - Added a `files` whitelist and a pack/install smoke test (`npm run smoke:pack`) run on a Node 22 + 24 CI matrix.
 - Added a routine driver: `antigravity loop [prompt]` records an inspectable session (`state/sessions/<id>/` with `metadata.json` + `plan.md` scaffolding the loop stages), and `antigravity session list|show|clear` manages them.
 - Hardened CI supply chain: pinned all GitHub Actions to commit SHAs (fixing a broken `ossf/scorecard-action@v2.5.1` reference to a real `v2.4.3`), added an actionlint `workflow-lint` job, and added an `npm audit --audit-level=high` gate (`npm run audit:deps`).
+- Completed the community profile: added `CODE_OF_CONDUCT.md`, `SUPPORT.md`, an issue-template `config.yml` (blank issues disabled), and required fields (version, environment, reproduction, guardrails) on the issue forms.

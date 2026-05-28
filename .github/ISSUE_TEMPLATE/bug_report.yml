@@ -1,6 +1,22 @@
 name: Bug report
 description: Report a local Antigravity scaffold bug
+labels:
+  - bug
 body:
+  - type: input
+    id: version
+    attributes:
+      label: Antigravity version
+      description: Output of `antigravity --version` (or `node src/cli.ts --version`).
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system and `node --version`.
+    validations:
+      required: true
   - type: textarea
     id: observed
     attributes:
@@ -14,7 +30,14 @@ body:
     validations:
       required: true
   - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: The exact commands that trigger the bug.
+    validations:
+      required: true
+  - type: textarea
     id: verification
     attributes:
       label: Verification evidence
-      description: Include npm run verify output when possible.
+      description: Include `npm run verify` output when possible.
