@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync, readdirSync, lstatSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 
 const args = new Set(process.argv.slice(2));
 const root = process.cwd();
@@ -13,7 +13,7 @@ const required = [
   ".github/ISSUE_TEMPLATE/mvp_feature.yml"
 ];
 
-const scanRoots = ["src", "test", "scripts", "package.json", "tsconfig.json", ".github/workflows"];
+const scanRoots = ["src", "test", "scripts", "examples", "package.json", "tsconfig.json", ".github"];
 // JSON config files legitimately carry metadata URLs (repository/bugs/homepage/$schema),
 // so the network-client rule is skipped for them while every other rule still applies.
 const networkClientPattern = /\bfetch\s*\(|\bXMLHttpRequest\b|https?:\/\/|(?:from\s+["\'](?:axios|got|undici|pacote)["\'])|(?:require\(["\'](?:axios|got|undici|pacote)["\']\))/i;
@@ -74,6 +74,7 @@ function assertIncludes(path, patterns) {
 
 function scanForbiddenPatterns() {
   const scanFiles = scanRoots.flatMap(walk)
+    .map((path) => path.split(sep).join("/"))
     .filter((path) => !path.includes("node_modules"))
     .filter((path) => /\.(?:c?js|mjs|ts|json|ya?ml)$|^(?:package\.json|tsconfig\.json)$/.test(path))
     .filter((path) => path !== "scripts/verify.mjs");
@@ -89,19 +90,24 @@ function scanForbiddenPatterns() {
 }
 
 function assertNegativeAuditIsLive() {
+  // One fixture per forbidden category. Every pattern must be tripped by at
+  // least one fixture, so a regex that silently stops matching fails the audit
+  // instead of passing on a single unrelated match.
   const fixtures = [
-    { path: "src/telemetry.ts", content: "export const x = 'mixpanel';" },
-    { path: "src/http.ts", content: "import got from 'got';" },
-    { path: ".github/workflows/publish.yml", content: "steps:\n  - uses: JS-DevTools/npm-publish@v3\n" },
-    { path: "scripts/token.mjs", content: "await core.getIDToken();" }
+    "export const x = 'mixpanel';",
+    "import got from 'got';",
+    "await fetch('https://example.com/telemetry');",
+    "steps:\n  - uses: JS-DevTools/npm-publish@v3\n",
+    "uses: googleapis/release-please-action@v4",
+    "permissions:\n  contents: write\n",
+    "await core.getIDToken();"
   ];
 
-  for (const fixture of fixtures) {
-    for (const pattern of forbidden) {
-      if (pattern.test(fixture.content)) return;
+  for (const pattern of forbidden) {
+    if (!fixtures.some((content) => pattern.test(content))) {
+      fail(`audit:negative has no fixture exercising forbidden pattern ${pattern}`);
     }
   }
-  fail("audit:negative fixtures did not exercise forbidden pattern coverage");
 }
 
 if (args.has("--audit-only")) {
