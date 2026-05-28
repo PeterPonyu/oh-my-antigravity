@@ -50,8 +50,15 @@ Defaults are local-only, private, no telemetry, no publishing, and a minimal com
 ## Development
 
 ```bash
-npm run verify
+npm run verify       # canonical gate: typecheck, lint, tests, CLI smoke, negative audit
+npm run build        # emit dist/cli.js (the published binary)
+npm run smoke:pack   # build, pack, install into a temp prefix, run the installed CLI
 ```
+
+`npm run verify` runs against the TypeScript source (Node strips types). The
+published package ships the built `dist/cli.js`, which the `bin` points at, so the
+installed CLI runs on the full `engines.node` range (>= 22) without type stripping.
+CI exercises this on a Node 22 + 24 matrix via `npm run smoke:pack`.
 
 `npm run verify` is the canonical gate for this scaffold. It runs syntax checks, lint-style scaffold checks, tests, CLI smoke checks, and negative audits for active telemetry or publishing side effects.
 

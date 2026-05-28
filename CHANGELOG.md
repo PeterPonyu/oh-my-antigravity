@@ -12,3 +12,5 @@ or npm publication is allowed until the release-blocker issues are closed.
 - Documented the MVP loop: `deep-interview -> ralplan -> team -> ultragoal`.
 - Added a real local-first command surface: `init`, `doctor`, `config` (show/get/set), and `skills`, backed by an `~/.antigravity` config/state home (override with `ANTIGRAVITY_HOME`).
 - Extended `antigravity status` with `home` and `initialized` runtime fields.
+- Added a real build: `npm run build` emits `dist/cli.js` (shebang preserved, relative imports rewritten to `.js`) and `bin` now points at the built CLI, so the package runs on the full Node `>= 22` range without type stripping.
+- Added a `files` whitelist and a pack/install smoke test (`npm run smoke:pack`) run on a Node 22 + 24 CI matrix.
