@@ -1,16 +1,26 @@
 #!/usr/bin/env node
-import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
+import { readFileSync, readdirSync, lstatSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 const args = new Set(process.argv.slice(2));
 const root = process.cwd();
 const required = [
   "README.md", "LICENSE", "NOTICE.md", "package.json", "tsconfig.json",
-  "src/cli.ts", "test/cli.test.ts", "docs/pr-train.md", "docs/lineage.md",
+  "src/cli.ts", "src/project.ts", "test/cli.test.ts", "docs/pr-train.md", "docs/lineage.md",
   ".github/workflows/ci.yml", ".github/workflows/release-please.yml",
   ".github/workflows/codeql.yml", ".github/workflows/scorecard.yml", "docs/ci-status.md", "docs/release-security.md",
   ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml",
   ".github/ISSUE_TEMPLATE/mvp_feature.yml"
+];
+
+const scanRoots = ["src", "test", "scripts", "package.json", "tsconfig.json", ".github/workflows"];
+const forbidden = [
+  /posthog|segment|analytics|sentry|datadog|mixpanel/i,
+  /\bfetch\s*\(|\bXMLHttpRequest\b|https?:\/\/|(?:from\s+["\'](?:axios|got|undici|pacote)["\'])|(?:require\(["\'](?:axios|got|undici|pacote)["\']\))/i,
+  /npm publish|pnpm publish|bun publish|gh release create|JS-DevTools\/npm-publish/i,
+  /release-please-action|googleapis\/release-please-action|softprops\/action-gh-release/i,
+  /contents:\s*write|pull-requests:\s*write/i,
+  /getIDToken\s*\(/i
 ];
 
 function fail(message) {
@@ -19,15 +29,36 @@ function fail(message) {
 }
 
 function read(path) {
-  return readFileSync(join(root, path), "utf8");
+  try {
+    return readFileSync(join(root, path), "utf8");
+  } catch (error) {
+    fail(`cannot read ${path}: ${error.message}`);
+  }
 }
 
 function walk(path) {
   const full = join(root, path);
   if (!existsSync(full)) return [];
-  const info = statSync(full);
+
+  let info;
+  try {
+    info = lstatSync(full);
+  } catch (error) {
+    fail(`cannot stat ${path}: ${error.message}`);
+  }
+
+  if (info.isSymbolicLink()) return [];
   if (info.isFile()) return [path];
-  return readdirSync(full).flatMap((entry) => walk(join(path, entry)));
+  if (!info.isDirectory()) return [];
+
+  try {
+    return readdirSync(full, { withFileTypes: true }).flatMap((entry) => {
+      if (entry.isSymbolicLink()) return [];
+      return walk(join(path, entry.name));
+    });
+  } catch (error) {
+    fail(`cannot list ${path}: ${error.message}`);
+  }
 }
 
 function assertIncludes(path, patterns) {
@@ -35,6 +66,36 @@ function assertIncludes(path, patterns) {
   for (const pattern of patterns) {
     if (!pattern.test(content)) fail(`${path} missing ${pattern}`);
   }
+}
+
+function scanForbiddenPatterns() {
+  const scanFiles = scanRoots.flatMap(walk)
+    .filter((path) => !path.includes("node_modules"))
+    .filter((path) => /\.(?:c?js|mjs|ts|json|ya?ml)$|^(?:package\.json|tsconfig\.json)$/.test(path))
+    .filter((path) => path !== "scripts/verify.mjs");
+
+  for (const file of scanFiles) {
+    const content = read(file);
+    for (const pattern of forbidden) {
+      if (pattern.test(content)) fail(`forbidden active side-effect pattern ${pattern} in ${file}`);
+    }
+  }
+}
+
+function assertNegativeAuditIsLive() {
+  const fixtures = [
+    { path: "src/telemetry.ts", content: "export const x = 'mixpanel';" },
+    { path: "src/http.ts", content: "import got from 'got';" },
+    { path: ".github/workflows/publish.yml", content: "steps:\n  - uses: JS-DevTools/npm-publish@v3\n" },
+    { path: "scripts/token.mjs", content: "await core.getIDToken();" }
+  ];
+
+  for (const fixture of fixtures) {
+    for (const pattern of forbidden) {
+      if (pattern.test(fixture.content)) return;
+    }
+  }
+  fail("audit:negative fixtures did not exercise forbidden pattern coverage");
 }
 
 for (const path of required) {
@@ -67,22 +128,7 @@ if (!/dry_run_reason/.test(releaseWorkflow) || !/publish_intent/.test(releaseWor
 if (!/timeout-minutes:\s*5/.test(releaseWorkflow) || !/concurrency:/.test(releaseWorkflow)) fail("release workflow must include timeout and concurrency");
 if (/contents:\s*write|pull-requests:\s*write|id-token:\s*write/.test(releaseWorkflow)) fail("release workflow must not request write permissions");
 
-if (!args.has("--lint-only")) {
-  const scanFiles = ["src", "test", "package.json", "tsconfig.json", ".github/workflows"].flatMap(walk)
-    .filter((path) => !path.includes("node_modules"));
-  const forbidden = [
-    /posthog|segment|analytics|sentry|datadog/i,
-    /fetch\s*\(|XMLHttpRequest|https?:\/\//i,
-    /npm publish|pnpm publish|bun publish|gh release create/i,
-    /release-please-action|googleapis\/release-please-action|softprops\/action-gh-release/i,
-    /contents:\s*write|pull-requests:\s*write/i
-  ];
-  for (const file of scanFiles) {
-    const content = read(file);
-    for (const pattern of forbidden) {
-      if (pattern.test(content)) fail(`forbidden active side-effect pattern ${pattern} in ${file}`);
-    }
-  }
-}
+assertNegativeAuditIsLive();
+if (!args.has("--lint-only")) scanForbiddenPatterns();
 
 console.log("verify checks passed");
