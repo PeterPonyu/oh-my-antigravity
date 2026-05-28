@@ -2,15 +2,28 @@
 
 What one thing does this PR change?
 
+Closes #
+
 ## Release-note title
 
 Use a changelog-quality title.
 
+## Defaults changed?
+
+- [ ] No default behavior changed.
+- [ ] Default behavior changed and the reason is documented above.
+
 ## Legal-copying checklist
 
-- [ ] No copied code/assets, or attribution/license evidence is linked.
+Author self-check:
+
+- [ ] No copied code/assets/text, or attribution/license evidence is linked.
 - [ ] NOTICE.md updated if any external material was imported.
 - [ ] Antigravity identity remains independent.
+
+Reviewer legal-copying check:
+
+- [ ] Reviewer confirms attribution/licensing evidence is sufficient for this PR.
 
 ## MVP guardrails
 

@@ -2,8 +2,26 @@
   "name": "antigravity",
   "version": "0.0.0-private",
   "private": true,
-  "description": "Antigravity MVP: a clean-room local agent-harness scaffold.",
+  "description": "Antigravity experimental beta: a clean-room local agent-harness scaffold.",
   "type": "module",
+  "license": "MIT",
+  "author": "Zeyu Fu",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PeterPonyu/oh-my-antigravity.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PeterPonyu/oh-my-antigravity/issues"
+  },
+  "homepage": "https://github.com/PeterPonyu/oh-my-antigravity#readme",
+  "keywords": [
+    "antigravity",
+    "agent-harness",
+    "clean-room",
+    "experimental",
+    "beta",
+    "local-first"
+  ],
   "bin": {
     "antigravity": "src/cli.ts"
   },

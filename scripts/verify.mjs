@@ -5,23 +5,27 @@ import { join } from "node:path";
 const args = new Set(process.argv.slice(2));
 const root = process.cwd();
 const required = [
-  "README.md", "LICENSE", "NOTICE.md", "package.json", "tsconfig.json",
+  "README.md", "LICENSE", "NOTICE.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "package.json", "tsconfig.json",
   "src/cli.ts", "src/project.ts", "test/cli.test.ts", "docs/pr-train.md", "docs/lineage.md",
   ".github/workflows/ci.yml", ".github/workflows/release-please.yml",
   ".github/workflows/codeql.yml", ".github/workflows/scorecard.yml", "docs/ci-status.md", "docs/release-security.md",
-  ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml",
+  ".github/pull_request_template.md", ".github/CODEOWNERS", ".github/ISSUE_TEMPLATE/bug_report.yml",
   ".github/ISSUE_TEMPLATE/mvp_feature.yml"
 ];
 
 const scanRoots = ["src", "test", "scripts", "package.json", "tsconfig.json", ".github/workflows"];
+// JSON config files legitimately carry metadata URLs (repository/bugs/homepage/$schema),
+// so the network-client rule is skipped for them while every other rule still applies.
+const networkClientPattern = /\bfetch\s*\(|\bXMLHttpRequest\b|https?:\/\/|(?:from\s+["\'](?:axios|got|undici|pacote)["\'])|(?:require\(["\'](?:axios|got|undici|pacote)["\']\))/i;
 const forbidden = [
   /posthog|segment|analytics|sentry|datadog|mixpanel/i,
-  /\bfetch\s*\(|\bXMLHttpRequest\b|https?:\/\/|(?:from\s+["\'](?:axios|got|undici|pacote)["\'])|(?:require\(["\'](?:axios|got|undici|pacote)["\']\))/i,
+  networkClientPattern,
   /npm publish|pnpm publish|bun publish|gh release create|JS-DevTools\/npm-publish/i,
   /release-please-action|googleapis\/release-please-action|softprops\/action-gh-release/i,
   /contents:\s*write|pull-requests:\s*write/i,
   /getIDToken\s*\(/i
 ];
+const jsonMetadataFiles = new Set(["package.json", "tsconfig.json"]);
 
 function fail(message) {
   console.error(`verify failed: ${message}`);
@@ -76,7 +80,9 @@ function scanForbiddenPatterns() {
 
   for (const file of scanFiles) {
     const content = read(file);
+    const skipNetworkRule = jsonMetadataFiles.has(file);
     for (const pattern of forbidden) {
+      if (skipNetworkRule && pattern === networkClientPattern) continue;
       if (pattern.test(content)) fail(`forbidden active side-effect pattern ${pattern} in ${file}`);
     }
   }
@@ -104,11 +110,22 @@ for (const path of required) {
 
 const pkg = JSON.parse(read("package.json"));
 if (pkg.private !== true) fail("package.json must set private true");
+if (pkg.license !== "MIT") fail("package.json must declare MIT license once LICENSE is selected");
+for (const field of ["repository", "bugs", "homepage", "author", "keywords"]) {
+  if (!pkg[field]) fail(`package.json missing ${field}`);
+}
+if (!/experimental|beta/i.test(pkg.description ?? "")) fail("package description must include beta/experimental disclaimer");
+assertIncludes("CHANGELOG.md", [/Unreleased/i, /pre-0\.1\.0/i]);
+assertIncludes("SECURITY.md", [/Reporting a vulnerability/i, /No released versions/i]);
+assertIncludes("CONTRIBUTING.md", [/PR routine/i, /npm run verify/i, /NOTICE.md/i]);
+assertIncludes(".github/CODEOWNERS", [/verify\.mjs/, /workflows/, /LICENSE/, /NOTICE/, /pr-train/]);
+assertIncludes(".gitignore", [/\.omc\//, /\.omx\//, /\*\.tsbuildinfo/]);
+
 assertIncludes("README.md", [/Antigravity/, /experimental|beta/i, /deep-interview -> ralplan -> team -> ultragoal/, /no telemetry/i, /Lineage/i]);
-assertIncludes("LICENSE", [/private scaffold/i, /distribution terms/i, /not been selected/i]);
-assertIncludes("NOTICE.md", [/clean-room/i, /copied code/i, /license/i, /attribution/i]);
+assertIncludes("LICENSE", [/MIT License/i, /Permission is hereby granted/i, /THE SOFTWARE IS PROVIDED/i]);
+assertIncludes("NOTICE.md", [/clean-room/i, /copied code/i, /license/i, /attribution/i, /Upstream:/i]);
 assertIncludes("docs/pr-train.md", [/de-identify/i, /Rebrand/i, /test/i, /Narrow/i, /default/i, /Dogfood/i, /release automation/i]);
-assertIncludes(".github/pull_request_template.md", [/Single focus/i, /Legal-copying/i, /Verification/i, /Release-note/i]);
+assertIncludes(".github/pull_request_template.md", [/Single focus/i, /Closes #/i, /Defaults changed/i, /Reviewer legal-copying/i, /Verification/i, /Release-note/i]);
 assertIncludes(".github/ISSUE_TEMPLATE/bug_report.yml", [/^description:/m, /^body:/m]);
 assertIncludes(".github/ISSUE_TEMPLATE/mvp_feature.yml", [/^description:/m, /^body:/m]);
 

@@ -6,7 +6,7 @@ Use small PRs whose titles can become release notes.
 2. Record legal boundary and NOTICE lineage; de-identify any inherited naming before use.
 3. Remove or reject telemetry surfaces before adding features.
 4. Rebrand one identity surface at a time.
-5. Pair every rebrand PR with test/snapshot repair.
+5. Pair every rebrand PR with test and fixture repair; do not mention snapshot tests unless a snapshot harness exists.
 6. Narrow the workflow surface to the MVP loop.
 7. Make safe local behavior the default; flags are secondary.
 8. Dogfood the harness and fix daily-use bugs first.
