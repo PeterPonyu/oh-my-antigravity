@@ -97,3 +97,12 @@ test("help lists every dispatched command", () => {
     assert.match(output, new RegExp(command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
 });
+
+test("examples/consume-status.mjs runs green against the live status contract", () => {
+  const result = spawnSync(process.execPath, ["examples/consume-status.mjs"], {
+    cwd: repoRoot,
+    encoding: "utf8"
+  });
+  assert.equal(result.status, 0, `expected exit 0, got ${result.status}: ${result.stderr}`);
+  assert.match(result.stdout, new RegExp(`Safe local scaffold: ${PROJECT.name}`));
+});
