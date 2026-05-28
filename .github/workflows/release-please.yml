@@ -30,7 +30,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Assert inert release lane
+        env:
+          PUBLISH_INTENT: ${{ inputs.publish_intent }}
+          DRY_RUN_REASON: ${{ inputs.dry_run_reason }}
         run: |
-          test "${{ inputs.publish_intent }}" = "false"
+          test "$PUBLISH_INTENT" = "false"
           echo "Antigravity release lane is intentionally inert."
-          echo "Reason: ${{ inputs.dry_run_reason }}"
+          echo "Reason: $DRY_RUN_REASON"
