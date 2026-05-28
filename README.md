@@ -16,16 +16,30 @@ deep-interview -> ralplan -> team -> ultragoal
 
 ## MVP surface
 
-Antigravity currently provides a local CLI skeleton with three commands:
+Antigravity provides a local-first CLI. All commands run offline and write only
+under the Antigravity home (`~/.antigravity`, or `$ANTIGRAVITY_HOME`).
 
 ```bash
-node src/cli.ts --help
-node src/cli.ts --version
-node src/cli.ts status
-node examples/consume-status.mjs
+node src/cli.ts --help                 # command surface
+node src/cli.ts --version              # version
+node src/cli.ts status                 # machine-readable readiness JSON
+node src/cli.ts init                   # create the local home (config, state, logs)
+node src/cli.ts doctor                 # diagnose the install; non-zero exit on failure
+node src/cli.ts config show            # inspect the local config
+node src/cli.ts config set loop "..."  # edit a mutable config key (guarded)
+node src/cli.ts skills                 # list the bundled loop skills
+node examples/consume-status.mjs       # consume the status contract
 ```
 
-Defaults are local-only, private, no telemetry, no publishing, and minimal command surface. The package metadata is present for repository health, but the package remains `private: true` until release blockers close.
+| Command | What it does |
+| --- | --- |
+| `status` | Prints the readiness contract (see `docs/status-contract.md`), including the resolved `home` and whether it is `initialized`. |
+| `init [--force]` | Creates `~/.antigravity` with `state/`, `logs/`, and a default `config.json`. Idempotent unless `--force`. |
+| `doctor [--json]` | Checks Node version, home/config validity, state writability, and loop drift; exits non-zero on failure. |
+| `config [show\|get <key>\|set <key> <value>]` | Reads or edits the local config. Only safe keys are mutable; the local-only/no-telemetry/inert-publishing guarantees are enforced on `set`. |
+| `skills [list]` | Lists the bundled loop skills (`deep-interview`, `ralplan`, `team`, `ultragoal`) and their enabled state. |
+
+Defaults are local-only, private, no telemetry, no publishing, and a minimal command surface. The package remains `private: true` until release blockers close.
 
 ## Documentation
 

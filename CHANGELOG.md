@@ -10,3 +10,5 @@ or npm publication is allowed until the release-blocker issues are closed.
 - Established a clean-room, local-first Antigravity scaffold.
 - Added pre-release verification, issue templates, PR template, and inert release automation placeholder.
 - Documented the MVP loop: `deep-interview -> ralplan -> team -> ultragoal`.
+- Added a real local-first command surface: `init`, `doctor`, `config` (show/get/set), and `skills`, backed by an `~/.antigravity` config/state home (override with `ANTIGRAVITY_HOME`).
+- Extended `antigravity status` with `home` and `initialized` runtime fields.
