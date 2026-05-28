@@ -1,10 +1,19 @@
 name: MVP feature proposal
 description: Propose a narrowly scoped Antigravity MVP feature
+labels:
+  - enhancement
 body:
   - type: textarea
     id: outcome
     attributes:
       label: Desired outcome
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Why this stays in MVP scope
+      description: How it maps to the deep-interview -> ralplan -> team -> ultragoal loop.
     validations:
       required: true
   - type: checkboxes
@@ -13,5 +22,8 @@ body:
       label: Guardrails
       options:
         - label: This does not add telemetry.
+          required: true
         - label: This does not publish packages or releases.
+          required: true
         - label: This keeps the default surface small.
+          required: true
