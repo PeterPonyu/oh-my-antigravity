@@ -14,6 +14,8 @@ must be intentional and covered by tests.
 | `privateScaffold` | boolean | not yet a published product | `true` |
 | `telemetry` | string | telemetry posture | `absent` |
 | `publishing` | string | release/publish posture | `inert` |
+| `home` | string | resolved local home (config/state); honors `ANTIGRAVITY_HOME` | `~/.antigravity` |
+| `initialized` | boolean | whether `antigravity init` has created the local home | `false` until init |
 
 Example:
 

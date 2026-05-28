@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, mkdtempSync, rmSync, existsSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const repoRoot = new URL("..", import.meta.url);
 const projectModule = await import(new URL("src/project.ts", repoRoot).href);
@@ -21,6 +23,19 @@ function spawnCli(...args: string[]) {
   });
 }
 
+function withTempHome(): { home: string; cleanup: () => void } {
+  const home = mkdtempSync(join(tmpdir(), "ag-home-"));
+  return { home, cleanup: () => rmSync(home, { recursive: true, force: true }) };
+}
+
+function runCliHome(home: string, ...args: string[]) {
+  return spawnSync(process.execPath, ["src/cli.ts", ...args], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    env: { ...process.env, ANTIGRAVITY_HOME: home }
+  });
+}
+
 function packageVersion(): string {
   const raw = readFileSync(new URL("package.json", repoRoot), "utf8");
   return JSON.parse(raw).version;
@@ -31,13 +46,13 @@ test("help shows Antigravity MVP identity", () => {
   assert.match(output, /Antigravity/);
   assert.match(output, new RegExp(PROJECT.loop.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(output, /Aliases:/);
-  assert.match(output, /antigravity -h/);
-  assert.match(output, /antigravity version/);
+  assert.match(output, /antigravity -h \| --help \| help/);
+  assert.match(output, /antigravity -v \| --version \| version/);
 });
 
 test("status reports local-only private scaffold", () => {
   const status = JSON.parse(runCli("status"));
-  assert.deepEqual(Object.keys(status).sort(), ["localOnly", "loop", "maturity", "name", "privateScaffold", "publishing", "telemetry", "version"].sort());
+  assert.deepEqual(Object.keys(status).sort(), ["home", "initialized", "localOnly", "loop", "maturity", "name", "privateScaffold", "publishing", "telemetry", "version"].sort());
   assert.equal(status.name, PROJECT.name);
   assert.equal(status.localOnly, true);
   assert.equal(status.privateScaffold, true);
@@ -105,4 +120,63 @@ test("examples/consume-status.mjs runs green against the live status contract", 
   });
   assert.equal(result.status, 0, `expected exit 0, got ${result.status}: ${result.stderr}`);
   assert.match(result.stdout, new RegExp(`Safe local scaffold: ${PROJECT.name}`));
+});
+
+test("init creates the home, state dir, and config, and status reflects it", () => {
+  const { home, cleanup } = withTempHome();
+  try {
+    const res = runCliHome(home, "init");
+    assert.equal(res.status, 0, res.stderr);
+    assert.ok(existsSync(join(home, "config.json")), "config.json should exist");
+    assert.ok(existsSync(join(home, "state")), "state dir should exist");
+    const status = JSON.parse(runCliHome(home, "status").stdout);
+    assert.equal(status.initialized, true);
+    assert.equal(status.home, home);
+  } finally {
+    cleanup();
+  }
+});
+
+test("doctor warns before init and is healthy after", () => {
+  const { home, cleanup } = withTempHome();
+  try {
+    const before = runCliHome(home, "doctor");
+    assert.equal(before.status, 0, before.stderr);
+    assert.match(before.stdout, /Not initialized/);
+    runCliHome(home, "init");
+    const after = runCliHome(home, "doctor", "--json");
+    assert.equal(after.status, 0, after.stderr);
+    const report = JSON.parse(after.stdout);
+    assert.equal(report.healthy, true);
+    assert.equal(report.failed, 0);
+  } finally {
+    cleanup();
+  }
+});
+
+test("config set persists a mutable key and rejects guarded keys", () => {
+  const { home, cleanup } = withTempHome();
+  try {
+    runCliHome(home, "init");
+    const set = runCliHome(home, "config", "set", "loop", "x -> y");
+    assert.equal(set.status, 0, set.stderr);
+    assert.equal(runCliHome(home, "config", "get", "loop").stdout.trim(), "x -> y");
+    const guarded = runCliHome(home, "config", "set", "telemetry", "on");
+    assert.equal(guarded.status, 2, "guarded key must be rejected");
+  } finally {
+    cleanup();
+  }
+});
+
+test("skills lists every bundled loop skill, enabled by default", () => {
+  const { home, cleanup } = withTempHome();
+  try {
+    const res = runCliHome(home, "skills", "--json");
+    assert.equal(res.status, 0, res.stderr);
+    const rows = JSON.parse(res.stdout) as Array<{ name: string; enabled: boolean }>;
+    assert.deepEqual(rows.map((row) => row.name), ["deep-interview", "ralplan", "team", "ultragoal"]);
+    assert.ok(rows.every((row) => row.enabled === true));
+  } finally {
+    cleanup();
+  }
 });
