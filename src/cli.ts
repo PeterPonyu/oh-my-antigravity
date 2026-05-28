@@ -5,6 +5,8 @@ import { initCommand } from "./commands/init.ts";
 import { doctorCommand } from "./commands/doctor.ts";
 import { configCommand } from "./commands/config.ts";
 import { skillsCommand } from "./commands/skills.ts";
+import { loopCommand } from "./commands/loop.ts";
+import { sessionCommand } from "./commands/session.ts";
 
 function printHelp(): void {
   console.log(`${PROJECT.displayName} ${PROJECT.version}
@@ -28,6 +30,10 @@ Commands:
                      Inspect or edit the local config.
   skills [list] [--json]
                      List the bundled loop skills and enabled state.
+  loop [prompt] [--json]
+                     Start a routine session (scaffolds a plan over the loop).
+  session [list|show <id>|clear [--force]] [--json]
+                     Inspect or clear recorded sessions.
 
 Default loop:
   ${PROJECT.loop}
@@ -62,6 +68,10 @@ async function main(): Promise<number> {
       return configCommand(rest);
     case "skills":
       return skillsCommand(rest);
+    case "loop":
+      return loopCommand(rest);
+    case "session":
+      return sessionCommand(rest);
     default:
       console.error(`Unknown ${PROJECT.displayName} command: ${command}`);
       console.error("Run `antigravity --help` for the MVP command surface.");
