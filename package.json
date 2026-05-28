@@ -1,0 +1,29 @@
+{
+  "name": "antigravity",
+  "version": "0.0.0-private",
+  "private": true,
+  "description": "Antigravity MVP: a clean-room local agent-harness scaffold.",
+  "type": "module",
+  "bin": {
+    "antigravity": "src/cli.ts"
+  },
+  "scripts": {
+    "start": "node ./src/cli.ts",
+    "cli:help": "node ./src/cli.ts --help",
+    "cli:status": "node ./src/cli.ts status",
+    "cli:version": "node ./src/cli.ts --version",
+    "build": "node --check ./src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "node ./scripts/verify.mjs --lint-only",
+    "test": "node --test",
+    "audit:negative": "node ./scripts/verify.mjs --audit-only",
+    "verify": "npm run typecheck && npm run lint && npm test && npm run build && npm run cli:help && npm run cli:status && npm run cli:version && npm run audit:negative"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.0"
+  }
+}

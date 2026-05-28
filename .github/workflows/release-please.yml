@@ -1,0 +1,16 @@
+name: Release automation placeholder
+
+# Manual no-op by design. This workflow documents the future release lane
+# without opening PRs, creating tags/releases, or publishing packages.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Antigravity release lane is intentionally inert."

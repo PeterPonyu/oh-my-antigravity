@@ -1,0 +1,17 @@
+name: MVP feature proposal
+description: Propose a narrowly scoped Antigravity MVP feature
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+    validations:
+      required: true
+  - type: checkboxes
+    id: guardrails
+    attributes:
+      label: Guardrails
+      options:
+        - label: This does not add telemetry.
+        - label: This does not publish packages or releases.
+        - label: This keeps the default surface small.
