@@ -2,7 +2,7 @@
 
 # Antigravity
 
-Antigravity is a clean-room MVP scaffold for a compact coding-agent harness routine.
+Antigravity is an experimental beta, clean-room MVP scaffold for a compact coding-agent harness routine.
 
 ## Story
 
@@ -24,7 +24,7 @@ node src/cli.ts --version
 node src/cli.ts status
 ```
 
-Defaults are local-only, private, no telemetry, no publishing, and minimal command surface.
+Defaults are local-only, private, no telemetry, no publishing, and minimal command surface. The package metadata is present for repository health, but the package remains `private: true` until release blockers close.
 
 ## Development
 

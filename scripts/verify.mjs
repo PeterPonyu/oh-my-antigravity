@@ -5,10 +5,10 @@ import { join } from "node:path";
 const args = new Set(process.argv.slice(2));
 const root = process.cwd();
 const required = [
-  "README.md", "LICENSE", "NOTICE.md", "package.json", "tsconfig.json",
+  "README.md", "LICENSE", "NOTICE.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "package.json", "tsconfig.json",
   "src/cli.ts", "test/cli.test.ts", "docs/pr-train.md", "docs/lineage.md",
   ".github/workflows/ci.yml", ".github/workflows/release-please.yml",
-  ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml",
+  ".github/pull_request_template.md", ".github/CODEOWNERS", ".github/ISSUE_TEMPLATE/bug_report.yml",
   ".github/ISSUE_TEMPLATE/mvp_feature.yml"
 ];
 
@@ -42,11 +42,22 @@ for (const path of required) {
 
 const pkg = JSON.parse(read("package.json"));
 if (pkg.private !== true) fail("package.json must set private true");
+if (pkg.license !== "MIT") fail("package.json must declare MIT license once LICENSE is selected");
+for (const field of ["repository", "bugs", "homepage", "author", "keywords"]) {
+  if (!pkg[field]) fail(`package.json missing ${field}`);
+}
+if (!/experimental|beta/i.test(pkg.description ?? "")) fail("package description must include beta/experimental disclaimer");
+assertIncludes("CHANGELOG.md", [/Unreleased/i, /pre-0\.1\.0/i]);
+assertIncludes("SECURITY.md", [/Reporting a vulnerability/i, /No released versions/i]);
+assertIncludes("CONTRIBUTING.md", [/PR routine/i, /npm run verify/i, /NOTICE.md/i]);
+assertIncludes(".github/CODEOWNERS", [/verify\.mjs/, /workflows/, /LICENSE/, /NOTICE/, /pr-train/]);
+assertIncludes(".gitignore", [/\.omc\//, /\.omx\//, /\*\.tsbuildinfo/]);
+
 assertIncludes("README.md", [/Antigravity/, /experimental|beta/i, /deep-interview -> ralplan -> team -> ultragoal/, /no telemetry/i, /Lineage/i]);
-assertIncludes("LICENSE", [/private scaffold/i, /distribution terms/i, /not been selected/i]);
-assertIncludes("NOTICE.md", [/clean-room/i, /copied code/i, /license/i, /attribution/i]);
+assertIncludes("LICENSE", [/MIT License/i, /Permission is hereby granted/i, /THE SOFTWARE IS PROVIDED/i]);
+assertIncludes("NOTICE.md", [/clean-room/i, /copied code/i, /license/i, /attribution/i, /Upstream:/i]);
 assertIncludes("docs/pr-train.md", [/de-identify/i, /Rebrand/i, /test/i, /Narrow/i, /default/i, /Dogfood/i, /release automation/i]);
-assertIncludes(".github/pull_request_template.md", [/Single focus/i, /Legal-copying/i, /Verification/i, /Release-note/i]);
+assertIncludes(".github/pull_request_template.md", [/Single focus/i, /Closes #/i, /Defaults changed/i, /Reviewer legal-copying/i, /Verification/i, /Release-note/i]);
 assertIncludes(".github/ISSUE_TEMPLATE/bug_report.yml", [/^description:/m, /^body:/m]);
 assertIncludes(".github/ISSUE_TEMPLATE/mvp_feature.yml", [/^description:/m, /^body:/m]);
 
@@ -57,8 +68,9 @@ if (!/^jobs:\s*$/m.test(releaseWorkflow)) fail("release workflow must include a 
 if (/contents:\s*write|pull-requests:\s*write|id-token:\s*write/.test(releaseWorkflow)) fail("release workflow must not request write permissions");
 
 if (!args.has("--lint-only")) {
-  const scanFiles = ["src", "test", "package.json", "tsconfig.json", ".github/workflows"].flatMap(walk)
-    .filter((path) => !path.includes("node_modules"));
+  const scanFiles = ["src", "test", "scripts", "tsconfig.json", ".github/workflows"].flatMap(walk)
+    .filter((path) => !path.includes("node_modules"))
+    .filter((path) => path !== "scripts/verify.mjs");
   const forbidden = [
     /posthog|segment|analytics|sentry|datadog/i,
     /fetch\s*\(|XMLHttpRequest|https?:\/\//i,

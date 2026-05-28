@@ -6,3 +6,9 @@ coverage/
 .env
 .env.*
 !.env.example
+.omc/
+.omx/
+*.tsbuildinfo
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,8 @@
+# Keep release, legal, and verification surfaces owner-reviewed until v0.1.0.
+/scripts/verify.mjs @PeterPonyu
+/.github/workflows/ @PeterPonyu
+/LICENSE @PeterPonyu
+/NOTICE.md @PeterPonyu
+/docs/pr-train.md @PeterPonyu
+/docs/lineage.md @PeterPonyu
+/package.json @PeterPonyu
