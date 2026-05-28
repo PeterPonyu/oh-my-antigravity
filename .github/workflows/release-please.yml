@@ -5,12 +5,32 @@ name: Release automation placeholder
 
 on:
   workflow_dispatch:
+    inputs:
+      dry_run_reason:
+        description: Why the release lane is being inspected without publishing.
+        required: true
+        default: pre-0.1.0-readiness-check
+      publish_intent:
+        description: Must remain false until issues #1, #2, and #3 are closed.
+        required: true
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-placeholder-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
   placeholder:
+    name: release-placeholder-noop
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - run: echo "Antigravity release lane is intentionally inert."
+      - name: Assert inert release lane
+        run: |
+          test "${{ inputs.publish_intent }}" = "false"
+          echo "Antigravity release lane is intentionally inert."
+          echo "Reason: ${{ inputs.dry_run_reason }}"

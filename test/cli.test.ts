@@ -4,6 +4,8 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 const repoRoot = new URL("..", import.meta.url);
+const projectModule = await import(new URL("src/project.ts", repoRoot).href);
+const { PROJECT } = projectModule;
 
 function runCli(...args: string[]) {
   return execFileSync(process.execPath, ["src/cli.ts", ...args], {
@@ -27,19 +29,33 @@ function packageVersion(): string {
 test("help shows Antigravity MVP identity", () => {
   const output = runCli("--help");
   assert.match(output, /Antigravity/);
-  assert.match(output, /deep-interview -> ralplan -> team -> ultragoal/);
+  assert.match(output, new RegExp(PROJECT.loop.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.match(output, /Aliases:/);
+  assert.match(output, /antigravity -h/);
+  assert.match(output, /antigravity version/);
 });
 
 test("status reports local-only private scaffold", () => {
   const status = JSON.parse(runCli("status"));
-  assert.equal(status.name, "antigravity");
+  assert.equal(status.name, PROJECT.name);
   assert.equal(status.localOnly, true);
   assert.equal(status.privateScaffold, true);
   assert.equal(status.telemetry, "absent");
 });
 
 test("version prints private version", () => {
-  assert.match(runCli("--version"), /0\.0\.0-private/);
+  assert.equal(runCli("--version").trim(), PROJECT.version);
+});
+
+
+test("help aliases match canonical help output", () => {
+  assert.equal(runCli("-h"), runCli("--help"));
+  assert.equal(runCli("help"), runCli("--help"));
+});
+
+test("version aliases match canonical version output", () => {
+  assert.equal(runCli("-v"), runCli("--version"));
+  assert.equal(runCli("version"), runCli("--version"));
 });
 
 test("CLI --version output matches package.json#version", () => {

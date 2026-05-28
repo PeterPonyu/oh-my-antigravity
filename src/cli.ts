@@ -1,31 +1,35 @@
 #!/usr/bin/env node
-
-const VERSION = "0.0.0-private";
-const LOOP = "deep-interview -> ralplan -> team -> ultragoal";
+import { PROJECT } from "./project.ts";
 
 function printHelp() {
-  console.log(`Antigravity ${VERSION}
+  console.log(`${PROJECT.displayName} ${PROJECT.version}
 
-A clean-room, local-first MVP scaffold for an agent harness routine.
+${PROJECT.description}
 
 Usage:
   antigravity --help
   antigravity --version
   antigravity status
 
+Aliases:
+  antigravity -h
+  antigravity help
+  antigravity -v
+  antigravity version
+
 Default loop:
-  ${LOOP}
+  ${PROJECT.loop}
 
 Defaults:
-  local-only, private, no telemetry, no publishing, minimal surface.`);
+  ${PROJECT.defaults}.`);
 }
 
 function printStatus() {
   console.log(JSON.stringify({
-    name: "antigravity",
-    version: VERSION,
-    maturity: "experimental-beta",
-    loop: LOOP,
+    name: PROJECT.name,
+    version: PROJECT.version,
+    maturity: PROJECT.maturity,
+    loop: PROJECT.loop,
     localOnly: true,
     privateScaffold: true,
     telemetry: "absent",
@@ -45,13 +49,13 @@ switch (command) {
   case "--version":
   case "-v":
   case "version":
-    console.log(VERSION);
+    console.log(PROJECT.version);
     break;
   case "status":
     printStatus();
     break;
   default:
-    console.error(`Unknown Antigravity command: ${command}`);
+    console.error(`Unknown ${PROJECT.displayName} command: ${command}`);
     console.error("Run `antigravity --help` for the MVP command surface.");
     process.exitCode = 2;
 }
