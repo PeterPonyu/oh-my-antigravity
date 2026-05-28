@@ -30,12 +30,11 @@
     "cli:help": "node ./src/cli.ts --help",
     "cli:status": "node ./src/cli.ts status",
     "cli:version": "node ./src/cli.ts --version",
-    "build": "node --check ./src/cli.ts",
     "typecheck": "tsc --noEmit",
     "lint": "node ./scripts/verify.mjs --lint-only",
     "test": "node --test",
     "audit:negative": "node ./scripts/verify.mjs --audit-only",
-    "verify": "npm run typecheck && npm run lint && npm test && npm run build && npm run cli:help && npm run cli:status && npm run cli:version && npm run audit:negative"
+    "verify": "npm run typecheck && npm run lint && npm test && npm run cli:help && npm run cli:status && npm run cli:version && npm run audit:negative"
   },
   "engines": {
     "node": ">=22"
