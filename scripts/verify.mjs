@@ -6,7 +6,7 @@ const args = new Set(process.argv.slice(2));
 const root = process.cwd();
 const required = [
   "README.md", "LICENSE", "NOTICE.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "package.json", "tsconfig.json",
-  "src/cli.ts", "src/project.ts", "test/cli.test.ts", "docs/pr-train.md", "docs/lineage.md",
+  "src/cli.ts", "src/project.ts", "test/cli.test.ts", "docs/pr-train.md", "docs/lineage.md", "docs/README.md", "docs/status-contract.md", "examples/consume-status.mjs",
   ".github/workflows/ci.yml", ".github/workflows/release-please.yml",
   ".github/workflows/codeql.yml", ".github/workflows/scorecard.yml", "docs/ci-status.md", "docs/release-security.md",
   ".github/pull_request_template.md", ".github/CODEOWNERS", ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -104,17 +104,26 @@ function assertNegativeAuditIsLive() {
   fail("audit:negative fixtures did not exercise forbidden pattern coverage");
 }
 
+if (args.has("--audit-only")) {
+  assertNegativeAuditIsLive();
+  scanForbiddenPatterns();
+  console.log("verify checks passed");
+  process.exit(0);
+}
+
 for (const path of required) {
   if (!existsSync(join(root, path))) fail(`missing required file ${path}`);
 }
 
 const pkg = JSON.parse(read("package.json"));
-if (pkg.private !== true) fail("package.json must set private true");
-if (pkg.license !== "MIT") fail("package.json must declare MIT license once LICENSE is selected");
-for (const field of ["repository", "bugs", "homepage", "author", "keywords"]) {
-  if (!pkg[field]) fail(`package.json missing ${field}`);
+if (pkg) {
+  if (pkg.private !== true) fail("package.json must set private true");
+  if (pkg.license !== "MIT") fail("package.json must declare MIT license once LICENSE is selected");
+  for (const field of ["repository", "bugs", "homepage", "author", "keywords"]) {
+    if (!pkg[field]) fail(`package.json missing ${field}`);
+  }
+  if (!/experimental|beta/i.test(pkg.description ?? "")) fail("package description must include beta/experimental disclaimer");
 }
-if (!/experimental|beta/i.test(pkg.description ?? "")) fail("package description must include beta/experimental disclaimer");
 assertIncludes("CHANGELOG.md", [/Unreleased/i, /pre-0\.1\.0/i]);
 assertIncludes("SECURITY.md", [/Reporting a vulnerability/i, /No released versions/i]);
 assertIncludes("CONTRIBUTING.md", [/PR routine/i, /npm run verify/i, /NOTICE.md/i]);
@@ -136,6 +145,10 @@ if (!/timeout-minutes:\s*15/.test(ciWorkflow)) fail("CI verify job must include 
 if (!/cache:\s*npm/.test(ciWorkflow)) fail("CI setup-node must enable npm cache");
 assertIncludes("docs/ci-status.md", [/verify \/ verify/, /branch protection/i]);
 assertIncludes("docs/release-security.md", [/trusted publishing/i, /provenance/i, /No workflow/i]);
+assertIncludes("docs/README.md", [/Lineage/i, /PR train/i, /Status contract/i]);
+assertIncludes("docs/status-contract.md", [/maturity/i, /publishing/i, /telemetry/i]);
+assertIncludes("README.md", [/examples\/consume-status\.mjs/, /docs\/README\.md/]);
+assertIncludes("CONTRIBUTING.md", [/docs\/pr-train\.md/, /docs\/ci-status\.md/]);
 
 const releaseWorkflow = read(".github/workflows/release-please.yml");
 if (!/^on:\s*$/m.test(releaseWorkflow) || !/^\s*workflow_dispatch:\s*$/m.test(releaseWorkflow)) fail("release workflow must be manual-only with workflow_dispatch");

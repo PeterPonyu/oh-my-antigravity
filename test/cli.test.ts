@@ -37,10 +37,14 @@ test("help shows Antigravity MVP identity", () => {
 
 test("status reports local-only private scaffold", () => {
   const status = JSON.parse(runCli("status"));
+  assert.deepEqual(Object.keys(status).sort(), ["localOnly", "loop", "maturity", "name", "privateScaffold", "publishing", "telemetry", "version"].sort());
   assert.equal(status.name, PROJECT.name);
   assert.equal(status.localOnly, true);
   assert.equal(status.privateScaffold, true);
   assert.equal(status.telemetry, "absent");
+  assert.equal(status.maturity, PROJECT.maturity);
+  assert.equal(status.loop, PROJECT.loop);
+  assert.equal(status.publishing, "inert");
 });
 
 test("version prints private version", () => {
@@ -84,4 +88,12 @@ test("unknown command writes guidance to stderr", () => {
 test("unknown command exits with code 2", () => {
   const result = spawnCli("not-a-real-command");
   assert.equal(result.status, 2, `expected exit 2, got ${result.status}`);
+});
+
+
+test("help lists every dispatched command", () => {
+  const output = runCli("--help");
+  for (const command of PROJECT.commands) {
+    assert.match(output, new RegExp(command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
 });

@@ -22,9 +22,16 @@ Antigravity currently provides a local CLI skeleton with three commands:
 node src/cli.ts --help
 node src/cli.ts --version
 node src/cli.ts status
+node examples/consume-status.mjs
 ```
 
 Defaults are local-only, private, no telemetry, no publishing, and minimal command surface. The package metadata is present for repository health, but the package remains `private: true` until release blockers close.
+
+## Documentation
+
+- `docs/README.md` indexes the contributor and release-readiness docs.
+- `docs/status-contract.md` documents the `antigravity status` JSON schema.
+- `examples/consume-status.mjs` shows a script consuming the status contract.
 
 ## Development
 

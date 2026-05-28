@@ -17,6 +17,9 @@ Aliases:
   antigravity -v
   antigravity version
 
+Commands:
+  ${PROJECT.commands.join("\n  ")}
+
 Default loop:
   ${PROJECT.loop}
 
