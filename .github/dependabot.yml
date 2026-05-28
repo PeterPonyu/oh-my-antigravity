@@ -6,10 +6,16 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    rebase-strategy: auto
+    versioning-strategy: increase-if-necessary
     labels:
       - dependencies
       - automation
       - pre-0.1.0
+    assignees:
+      - PeterPonyu
+    reviewers:
+      - PeterPonyu
     commit-message:
       prefix: chore(deps)
       include: scope
@@ -18,8 +24,10 @@ updates:
         update-types:
           - minor
           - patch
-    reviewers:
-      - PeterPonyu
+    ignore:
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: /
@@ -27,11 +35,16 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    rebase-strategy: auto
     labels:
       - dependencies
       - automation
       - security
       - pre-0.1.0
+    assignees:
+      - PeterPonyu
+    reviewers:
+      - PeterPonyu
     commit-message:
       prefix: chore(ci)
       include: scope
@@ -40,5 +53,3 @@ updates:
         update-types:
           - minor
           - patch
-    reviewers:
-      - PeterPonyu
