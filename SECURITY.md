@@ -1,6 +1,6 @@
 # Security Policy
 
-Antigravity is experimental and pre-0.1.0. Please do not treat it as a production
+oh-my-antigrav is experimental and pre-0.1.0. Please do not treat it as a production
 security boundary or a published package.
 
 ## Reporting a vulnerability

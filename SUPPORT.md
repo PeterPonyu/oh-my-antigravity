@@ -1,12 +1,12 @@
 # Support
 
-Antigravity is an experimental, pre-release local scaffold. Support is
+oh-my-antigrav is an experimental, pre-release local scaffold. Support is
 best-effort.
 
 ## Getting help
 
 - **Bugs:** open an issue using the Bug report form (blank issues are disabled).
-  Include `antigravity --version`, your OS + `node --version`, reproduction steps,
+  Include `oh-my-antigrav --version`, your OS + `node --version`, reproduction steps,
   and `npm run verify` output.
 - **Feature ideas:** use the MVP feature proposal form. Proposals must keep the
   default surface small and stay within the loop.
@@ -31,7 +31,7 @@ There is no global install to remove. Delete the clone, and (if you ran `init`)
 remove the local home:
 
 ```bash
-rm -rf ~/.antigravity      # or "$ANTIGRAVITY_HOME" if you set one
+rm -rf ~/.oh-my-antigrav      # or "$OH_MY_ANTIGRAV_HOME" if you set one
 ```
 
 ## Documentation

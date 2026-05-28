@@ -12,5 +12,5 @@ if (status.localOnly && status.telemetry === "absent" && status.publishing === "
   console.log(`Safe local scaffold: ${status.name} ${status.version}`);
   console.log(`Default loop: ${status.loop}`);
 } else {
-  throw new Error(`Unexpected Antigravity status contract: ${output}`);
+  throw new Error(`Unexpected oh-my-antigrav status contract: ${output}`);
 }

@@ -16,7 +16,7 @@ function nodeMajor(version: string): number {
   return Number.parseInt(version.replace(/^v/, "").split(".")[0] ?? "0", 10);
 }
 
-// `antigravity doctor [--json]`
+// `oh-my-antigrav doctor [--json]`
 // Diagnose the local install: runtime, home, config validity, state writability,
 // and config/loop drift. Exit non-zero if any check fails.
 export function doctorCommand(args: string[], env = process.env): number {
@@ -40,7 +40,7 @@ export function doctorCommand(args: string[], env = process.env): number {
       checks.push({ level: "warn", label: `config loop drifted from the canonical "${PROJECT.loop}"` });
     }
   } else {
-    checks.push({ level: "warn", label: `Not initialized — run \`antigravity init\` (home: ${home})` });
+    checks.push({ level: "warn", label: `Not initialized — run \`oh-my-antigrav init\` (home: ${home})` });
   }
 
   const probeDir = stateDir(env);

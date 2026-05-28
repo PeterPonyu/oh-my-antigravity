@@ -31,7 +31,7 @@ export function newSessionId(now: Date = new Date()): string {
 
 function renderPlan(session: Session): string {
   return [
-    `# Antigravity session ${session.id}`,
+    `# oh-my-antigrav session ${session.id}`,
     "",
     `Prompt: ${session.prompt || "(none)"}`,
     `Loop:   ${session.loop}`,

@@ -14,11 +14,11 @@ function printHelp(): void {
 ${PROJECT.description}
 
 Usage:
-  antigravity <command> [options]
+  oh-my-antigrav <command> [options]
 
 Aliases:
-  antigravity -h | --help | help
-  antigravity -v | --version | version
+  oh-my-antigrav -h | --help | help
+  oh-my-antigrav -v | --version | version
 
 Commands:
   help               Show this help.
@@ -74,7 +74,7 @@ async function main(): Promise<number> {
       return sessionCommand(rest);
     default:
       console.error(`Unknown ${PROJECT.displayName} command: ${command}`);
-      console.error("Run `antigravity --help` for the MVP command surface.");
+      console.error("Run `oh-my-antigrav --help` for the MVP command surface.");
       return 2;
   }
 }

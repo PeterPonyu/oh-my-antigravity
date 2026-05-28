@@ -10,7 +10,7 @@ The `verify / verify` job runs `npm ci` and `npm run verify` on Node 24.
 
 A second job, `verify / pack-smoke`, runs on a Node `22` and `24` matrix. It
 builds, packs, installs the tarball into an isolated prefix, and runs the
-installed `antigravity` binary (`npm run smoke:pack`). This proves the shipped
+installed `oh-my-antigrav` binary (`npm run smoke:pack`). This proves the shipped
 `dist/cli.js` works on the engines lower bound (Node 22), where running the
 TypeScript source directly is unsupported.
 

@@ -1,8 +1,8 @@
 {
-  "name": "antigravity",
+  "name": "oh-my-antigrav",
   "version": "0.0.0-private",
   "private": true,
-  "description": "Antigravity experimental beta: a clean-room local agent-harness scaffold.",
+  "description": "oh-my-antigrav experimental beta: a clean-room local agent-harness scaffold.",
   "type": "module",
   "license": "MIT",
   "author": "Zeyu Fu",
@@ -15,7 +15,7 @@
   },
   "homepage": "https://github.com/PeterPonyu/oh-my-antigravity#readme",
   "keywords": [
-    "antigravity",
+    "oh-my-antigrav",
     "agent-harness",
     "clean-room",
     "experimental",
@@ -23,7 +23,8 @@
     "local-first"
   ],
   "bin": {
-    "antigravity": "dist/cli.js"
+    "oh-my-antigrav": "dist/cli.js",
+    "oag": "dist/cli.js"
   },
   "files": [
     "dist",

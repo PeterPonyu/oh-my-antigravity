@@ -1,6 +1,6 @@
 # Notice and Lineage
 
-Antigravity begins as a clean-room local scaffold. It is inspired by observed
+oh-my-antigrav begins as a clean-room local scaffold. It is inspired by observed
 product routines in Gajae Code and by lessons from local oh-my-codex /
 oh-my-claudecode harnesses, but this first scaffold does not copy their source
 code or assets.

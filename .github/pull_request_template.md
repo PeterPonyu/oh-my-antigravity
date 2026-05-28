@@ -19,7 +19,7 @@ Author self-check:
 
 - [ ] No copied code/assets/text, or attribution/license evidence is linked.
 - [ ] NOTICE.md updated if any external material was imported.
-- [ ] Antigravity identity remains independent.
+- [ ] oh-my-antigrav identity remains independent.
 
 Reviewer legal-copying check:
 

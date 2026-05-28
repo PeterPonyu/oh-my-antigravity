@@ -1,6 +1,6 @@
 # Contributing
 
-Antigravity uses a small-PR train rather than broad rewrites. See `docs/pr-train.md` for the full PR-train SOP and `docs/ci-status.md` for the required check name.
+oh-my-antigrav uses a small-PR train rather than broad rewrites. See `docs/pr-train.md` for the full PR-train SOP and `docs/ci-status.md` for the required check name.
 
 ## PR routine
 

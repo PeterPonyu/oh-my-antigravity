@@ -1,4 +1,4 @@
-# Antigravity PR Train SOP
+# oh-my-antigrav PR Train SOP
 
 Use small PRs whose titles can become release notes.
 

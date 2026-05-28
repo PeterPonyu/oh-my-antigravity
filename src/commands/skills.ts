@@ -1,7 +1,7 @@
 import { SKILLS } from "../project.ts";
 import { readConfig } from "../lib/config.ts";
 
-// `antigravity skills [list] [--json]`
+// `oh-my-antigrav skills [list] [--json]`
 // List the bundled loop skills and whether each is enabled by the local config
 // (all enabled by default when not initialized).
 export function skillsCommand(args: string[], env = process.env): number {
