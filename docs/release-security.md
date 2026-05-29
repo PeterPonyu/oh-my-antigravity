@@ -28,4 +28,72 @@ GitHub release, or npm publication.
   reviewed step — never an incidental change.
 - **publishConfig:** add `"publishConfig": { "access": "public" }` only in the same
   change that removes `private: true` and cuts the first real version. It is omitted
-  today so an accidental `npm publish` cannot succeed.
+  today so an accidental publish cannot succeed.
+
+## OIDC trusted publishing design (WIP — tracked in issues #5 and #87)
+
+This section documents the future supply-chain posture so reviewers can evaluate
+it before any of the live steps are activated. Nothing here is active yet.
+
+### Why OIDC trusted publishing?
+
+Using a long-lived `NPM_TOKEN` secret stored in GitHub Actions secrets is a supply-
+chain risk: the token can be stolen from logs, misconfigured forks, or compromised
+workflows. npm's trusted publishing feature eliminates the stored secret entirely:
+
+- The publish workflow requests a short-lived OIDC JWT from GitHub (`id-token: write`).
+- npm exchanges the JWT against the configured trusted publisher record on npmjs.com,
+  vending a scoped publish token valid for that single workflow run only.
+- No secret is stored in the repository or organisation settings.
+
+### npm provenance
+
+Publishing with the `--provenance` flag attaches a Sigstore build attestation to the
+tarball. The attestation cryptographically links the published package back to the
+exact GitHub Actions workflow run, repository, ref, and commit SHA. Consumers can
+verify the attestation with `npm audit signatures` or the Sigstore transparency log.
+
+### Pre-staged workflow: .github/workflows/npm-publish.yml
+
+The file `.github/workflows/npm-publish.yml` is a WIP stub (issues #5 and #87).
+It declares the correct OIDC permission (`id-token: write`, `contents: read`) but
+all publish steps are hard no-ops guarded by the same `private: true` /
+`0.0.0-private` version check used in the release-please placeholder. The file
+exists so the permission scope, OIDC flow, and provenance flags are visible to
+reviewers before the lane is activated.
+
+### Five-step unblocking checklist (all must be reviewed together)
+
+The live publish lane requires all five steps to land in a single reviewed PR:
+
+1. **Remove `private: true`** from `package.json` and set a real semver version.
+2. **Add `publishConfig`** (`{ "access": "public" }`) to `package.json`.
+3. **Whitelist** the publish command and release-please action in `scripts/verify.mjs`.
+4. **Wire the tag/release trigger** in `npm-publish.yml` (replace `workflow_dispatch`
+   with `on: release: types: [published]`, scoped to `v[0-9]+.*` tags).
+5. **Configure the trusted publisher** on npmjs.com for this repository, workflow
+   file (`npm-publish.yml`), and environment name (`npm-release`).
+
+Until all five steps are merged, `v0.1.0` is blocked and no publish can succeed.
+
+### Release-please automation design (WIP — issue #5)
+
+The release-please workflow (`.github/workflows/release-please.yml`) will be
+activated in a separate step after the npm publish lane is reviewed. When live it
+will use `googleapis/release-please-action` to open release PRs and create tags,
+with minimum permissions (`contents: write` and `pull-requests: write` — both
+currently forbidden by `scripts/verify.mjs` and must be explicitly whitelisted).
+The release PR creation and the npm publish are intentionally separate workflows
+so their permission scopes never overlap.
+
+### Least-privilege permission summary (future state)
+
+| Workflow          | Permission granted     | Why                               |
+|-------------------|------------------------|-----------------------------------|
+| release-please    | `contents: write`      | Create release tags and PRs       |
+| release-please    | `pull-requests: write` | Open and update release PRs       |
+| npm-publish       | `id-token: write`      | OIDC JWT for trusted publishing   |
+| npm-publish       | `contents: read`       | Checkout only                     |
+| All other CI      | `contents: read`       | Default read-only posture         |
+
+No workflow ever holds both `contents: write` and `id-token: write` simultaneously.
