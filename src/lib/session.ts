@@ -69,9 +69,14 @@ export function createSession(prompt: string, env: Env = process.env, now: Date 
   };
 
   const dir = join(sessionsRoot(env), session.id);
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "metadata.json"), `${JSON.stringify(session, null, 2)}\n`);
-  writeFileSync(join(dir, "plan.md"), renderPlan(session));
+  try {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "metadata.json"), `${JSON.stringify(session, null, 2)}\n`);
+    writeFileSync(join(dir, "plan.md"), renderPlan(session));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`failed to write session ${session.id} to ${dir}: ${message}`);
+  }
   return session;
 }
 

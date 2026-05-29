@@ -1,6 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { stateDir } from "../lib/paths.ts";
-import { createSession } from "../lib/session.ts";
+import { createSession, type Session } from "../lib/session.ts";
 
 // `oh-my-antigrav loop [prompt] [--json]`
 // Start a routine session for `prompt`: scaffold the loop stages and a plan.md,
@@ -13,8 +13,15 @@ export function loopCommand(args: string[], env = process.env): number {
     return 2;
   }
 
-  mkdirSync(stateDir(env), { recursive: true });
-  const session = createSession(prompt, env);
+  let session: Session;
+  try {
+    mkdirSync(stateDir(env), { recursive: true });
+    session = createSession(prompt, env);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`loop: failed to start session: ${message}`);
+    return 1;
+  }
 
   if (json) {
     console.log(JSON.stringify(session, null, 2));
