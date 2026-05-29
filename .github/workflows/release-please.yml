@@ -1,7 +1,19 @@
 name: Release automation placeholder
 
-# Manual no-op by design. This workflow documents the future release lane
-# without opening PRs, creating tags/releases, or publishing packages.
+# Manual no-op by design. This workflow documents and pre-stages the future
+# release lane WITHOUT opening PRs, creating tags/releases, or publishing
+# packages. It cannot publish: scripts/verify.mjs forbids every active
+# publish/release side-effect (the release-please action, release-creation
+# actions, package-publish commands, id-token write, contents/pull-requests
+# write) across .github/, so the only thing that can land here today is this
+# inert guard.
+#
+# The job below adds a HARD release-readiness guard: it refuses to proceed
+# while package.json is `private: true` or the version is still
+# `0.0.0-private`. That makes an accidental v0.1.0 release impossible even if
+# someone flips `publish_intent` to true. See docs/release-process.md for the
+# exact steps (and the verify.mjs whitelisting) a future reviewed release PR
+# must perform to turn this lane live.
 
 on:
   workflow_dispatch:
@@ -15,6 +27,10 @@ on:
         required: true
         type: boolean
         default: false
+      confirm:
+        description: 'Operator confirmation. Must be typed exactly as: inspect-only'
+        required: true
+        default: inspect-only
 
 concurrency:
   group: release-placeholder-${{ github.ref }}
@@ -29,11 +45,29 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Assert inert release lane
         env:
           PUBLISH_INTENT: ${{ inputs.publish_intent }}
           DRY_RUN_REASON: ${{ inputs.dry_run_reason }}
+          CONFIRM: ${{ inputs.confirm }}
         run: |
           test "$PUBLISH_INTENT" = "false"
+          test "$CONFIRM" = "inspect-only"
           echo "oh-my-antigrav release lane is intentionally inert."
           echo "Reason: $DRY_RUN_REASON"
+      - name: Hard release-readiness guard
+        # Refuse to proceed while the package is a private pre-0.1.0 scaffold.
+        # This guard must stay until a deliberate, reviewed release PR removes
+        # `private: true` and cuts the first real version. It guarantees this
+        # workflow cannot move toward a v0.1.0 release today.
+        run: |
+          IS_PRIVATE="$(node -p "require('./package.json').private === true")"
+          VERSION="$(node -p "require('./package.json').version")"
+          echo "package.json private=$IS_PRIVATE version=$VERSION"
+          if [ "$IS_PRIVATE" = "true" ] || [ "$VERSION" = "0.0.0-private" ]; then
+            echo "Release lane is blocked: package is a private pre-0.1.0 scaffold."
+            echo "No tag, GitHub release, or publish can run. See docs/release-process.md."
+            exit 1
+          fi
+          echo "Readiness guard would pass; the live release lane is still not wired (see docs/release-process.md)."
