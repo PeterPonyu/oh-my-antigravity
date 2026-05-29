@@ -237,6 +237,38 @@ test("loop rejects empty prompts without writing a session", () => {
   }
 });
 
+test("loop reports a friendly error and exits non-zero when session writes fail", () => {
+  const { home, cleanup } = withTempHome();
+  try {
+    // Plant a regular file where the sessions directory must live so the
+    // recursive mkdir for the per-session directory fails (ENOTDIR), simulating
+    // a permission/full-disk style write failure without root or quotas.
+    const stateDir = join(home, "state");
+    execFileSync(process.execPath, ["-e", `const fs=require('fs');fs.mkdirSync(${JSON.stringify(stateDir)},{recursive:true});fs.writeFileSync(${JSON.stringify(join(stateDir, "sessions"))},'not a dir')`]);
+    const res = runCliHome(home, "loop", "--json", "build a parser");
+    assert.equal(res.status, 1, `expected exit 1, got ${res.status}: ${res.stderr}`);
+    assert.match(res.stderr, /loop: failed to start session/);
+    assert.doesNotMatch(res.stderr, /at Object\.<anonymous>/, "must not leak a raw stack trace");
+  } finally {
+    cleanup();
+  }
+});
+
+test("createSession throws a contextual error when the filesystem write fails", async () => {
+  const { createSession } = await import(new URL("src/lib/session.ts", repoRoot).href);
+  const { home, cleanup } = withTempHome();
+  try {
+    const stateDir = join(home, "state");
+    execFileSync(process.execPath, ["-e", `const fs=require('fs');fs.mkdirSync(${JSON.stringify(stateDir)},{recursive:true});fs.writeFileSync(${JSON.stringify(join(stateDir, "sessions"))},'not a dir')`]);
+    assert.throws(
+      () => createSession("demo", { ...process.env, OH_MY_ANTIGRAV_HOME: home }),
+      /failed to write session .* to /
+    );
+  } finally {
+    cleanup();
+  }
+});
+
 test("session ids remain unique for same-millisecond starts", async () => {
   const { newSessionId } = await import(new URL("src/lib/session.ts", repoRoot).href);
   const now = new Date("2026-05-28T00:00:00.000Z");
