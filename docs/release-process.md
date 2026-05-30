@@ -9,6 +9,8 @@ take — in a separate, reviewed PR — to make it live.
 This honors the decisions recorded in issues #5, #37 (OIDC trusted publishing +
 provenance), #39 (CHANGELOG), and #32 (release workflow operator contract).
 
+For the current local evidence checklist, use [`docs/release-readiness.md`](./release-readiness.md). That record is a readiness proof only; it does not enable publication or change the private scaffold posture.
+
 ## What is automated today (and why it is inert)
 
 - `.github/workflows/release-please.yml` is **manual-only** (`workflow_dispatch`),

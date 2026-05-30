@@ -12,7 +12,8 @@ When publishing is enabled, prefer this release posture:
 5. Require the `verify / verify`, CodeQL, and OSSF Scorecard baselines before the release PR merges.
 
 Today this is documentation only. No workflow in this repository can create a tag,
-GitHub release, or npm publication.
+GitHub release, or npm publication. The current local evidence checklist lives in
+[`docs/release-readiness.md`](./release-readiness.md) and preserves the same private posture.
 
 ## Versioning and publication policy
 

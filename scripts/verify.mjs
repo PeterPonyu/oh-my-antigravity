@@ -8,7 +8,7 @@ const required = [
   "README.md", "LICENSE", "NOTICE.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "package.json", "tsconfig.json",
   "src/cli.ts", "src/project.ts", "test/cli.test.ts", "docs/pr-train.md", "docs/lineage.md", "docs/README.md", "docs/status-contract.md", "examples/consume-status.mjs",
   ".github/workflows/ci.yml", ".github/workflows/release-please.yml",
-  ".github/workflows/codeql.yml", ".github/workflows/scorecard.yml", "docs/ci-status.md", "docs/release-security.md", "docs/release-process.md",
+  ".github/workflows/codeql.yml", ".github/workflows/scorecard.yml", "docs/ci-status.md", "docs/release-security.md", "docs/release-process.md", "docs/release-readiness.md",
   ".github/pull_request_template.md", ".github/CODEOWNERS", ".github/ISSUE_TEMPLATE/bug_report.yml",
   ".github/ISSUE_TEMPLATE/mvp_feature.yml"
 ];
@@ -152,7 +152,8 @@ if (!/cache:\s*npm/.test(ciWorkflow)) fail("CI setup-node must enable npm cache"
 assertIncludes("docs/ci-status.md", [/verify \/ verify/, /branch protection/i]);
 assertIncludes("docs/release-security.md", [/trusted publishing/i, /provenance/i, /No workflow/i]);
 assertIncludes("docs/README.md", [/Lineage/i, /PR train/i, /Status contract/i, /release-process/i]);
-assertIncludes("docs/release-process.md", [/not cutting v0\.1\.0/i, /workflow_dispatch/i, /release-readiness guard/i, /trusted publishing/i, /provenance/i, /deferred/i]);
+assertIncludes("docs/release-process.md", [/not cutting v0\.1\.0/i, /workflow_dispatch/i, /release-readiness guard/i, /trusted publishing/i, /provenance/i, /deferred/i, /release-readiness\.md/i]);
+assertIncludes("docs/release-readiness.md", [/private local-first scaffold/i, /npm run verify/i, /npm run smoke:pack/i, /telemetry: "absent"/i, /publishing: "inert"/i, /separate reviewed/i]);
 assertIncludes("docs/status-contract.md", [/maturity/i, /publishing/i, /telemetry/i]);
 assertIncludes("README.md", [/examples\/consume-status\.mjs/, /docs\/README\.md/]);
 assertIncludes("CONTRIBUTING.md", [/docs\/pr-train\.md/, /docs\/ci-status\.md/]);
