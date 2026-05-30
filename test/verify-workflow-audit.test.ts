@@ -156,6 +156,81 @@ test("suite-verification is green on the real (unplanted) repository tree", () =
   assert.ok(check && check.ok, "no-publish-credential-workflow check must pass on the clean tree");
 });
 
+// CI portability: on an isolated single-repo Actions checkout there are no sibling
+// repos and no .analysis/gajae-code snapshot. Pointing SUITE_ROOT at an empty dir
+// simulates that exactly. The verifier must (a) stay green / ok:true on the
+// required path, (b) still run the self-repo posture+inventory checks STRICTLY,
+// and (c) record the cross-repo checks as explicit, logged SKIPs (never silently
+// false-green).
+test("suite-verification is green in an isolated single-repo checkout (siblings absent) and skips cross-repo checks", () => {
+  const emptySuite = mkdtempSync(join(tmpdir(), "ag-empty-suite-"));
+  try {
+    const res = spawnSync(process.execPath, [suiteScript, "--json"], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      env: { ...process.env, SUITE_ROOT: emptySuite }
+    });
+    assert.equal(res.status, 0, `expected exit 0 on isolated checkout, got ${res.status}: ${res.stderr}`);
+    const report = JSON.parse(res.stdout) as {
+      ok: boolean;
+      mode: string;
+      checks: Array<{ name: string; ok: boolean }>;
+      skipped: Array<{ name: string; detail?: string }>;
+    };
+    assert.equal(report.ok, true, "isolated single-repo checkout must be ok:true on the required path");
+    assert.equal(report.mode, "self", "absent siblings must degrade to self mode");
+
+    // Self-repo checks ran strictly and passed.
+    for (const name of [
+      "oh-my-antigravity:surface-inventory",
+      "oh-my-antigravity:surface-inventory-schema",
+      "oh-my-antigravity:status-posture",
+      "oh-my-antigravity:no-publish-credential-workflow"
+    ]) {
+      const check = report.checks.find((c) => c.name === name);
+      assert.ok(check && check.ok, `self-repo check ${name} must run strictly and pass`);
+    }
+
+    // Cross-repo checks are explicitly skipped (logged), not silently dropped.
+    const skippedNames = new Set(report.skipped.map((s) => s.name));
+    assert.ok(skippedNames.has("oh-my-cursor:surface-inventory"), "absent sibling inventory must be skipped, not failed");
+    assert.ok(skippedNames.has("suite:gajae-source-snapshot"), "absent gajae snapshot must be skipped, not failed");
+    // The degradation notice is logged to stderr so the skip is never invisible.
+    assert.match(res.stderr, /SELF mode/);
+
+    // None of the absent-sibling checks leaked into the failing-checks set.
+    for (const check of report.checks) {
+      if (/^oh-my-(cursor|copilot|grokbuild):/.test(check.name)) {
+        assert.ok(check.ok, `present-only sibling check ${check.name} should not appear as failing in self mode`);
+      }
+    }
+  } finally {
+    rmSync(emptySuite, { recursive: true, force: true });
+  }
+});
+
+// The opt-in suite-strict mode (used by a dedicated, NON-required job or a fully
+// checked-out developer suite) must still FAIL CLOSED when siblings/fixtures are
+// absent, so absence can never silently pass when full validation was demanded.
+test("suite-verification --suite FAILS CLOSED when siblings are absent (non-required strict mode)", () => {
+  const emptySuite = mkdtempSync(join(tmpdir(), "ag-strict-suite-"));
+  try {
+    const res = spawnSync(process.execPath, [suiteScript, "--suite", "--json"], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      env: { ...process.env, SUITE_ROOT: emptySuite }
+    });
+    assert.equal(res.status, 1, `expected exit 1 in suite-strict with absent siblings, got ${res.status}: ${res.stderr}`);
+    const report = JSON.parse(res.stdout) as { ok: boolean; mode: string; checks: Array<{ name: string; ok: boolean }> };
+    assert.equal(report.ok, false);
+    assert.equal(report.mode, "suite-strict");
+    const cursor = report.checks.find((c) => c.name === "oh-my-cursor:surface-inventory");
+    assert.ok(cursor && cursor.ok === false, "absent sibling must FAIL in suite-strict mode");
+  } finally {
+    rmSync(emptySuite, { recursive: true, force: true });
+  }
+});
+
 // Exact default-surface contract: the antigravity scaffold's default surface is a
 // fixed compact set. Drift here (e.g. a new default command sneaking in) must be
 // an explicit, reviewed change, so we pin it.

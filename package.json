@@ -44,6 +44,7 @@
     "lint": "node ./scripts/verify.mjs --lint-only",
     "inventory:validate": "node ./scripts/validate-surface-inventory.mjs",
     "verify:suite": "node ./scripts/suite-verification.mjs",
+    "verify:suite:strict": "node ./scripts/suite-verification.mjs --suite",
     "test": "node --test",
     "audit:negative": "node ./scripts/verify.mjs --audit-only",
     "audit:deps": "npm audit --audit-level=high",

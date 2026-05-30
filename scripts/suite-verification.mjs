@@ -9,13 +9,40 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const suiteRoot = process.env.SUITE_ROOT ? resolve(process.env.SUITE_ROOT) : dirname(repoRoot);
 const args = new Set(process.argv.slice(2));
 const jsonMode = args.has("--json");
+// Suite-strict mode turns "sibling repo / gajae snapshot is absent" from a logged
+// skip into a hard failure. It is opt-in (`--suite` flag or OMC_SUITE_STRICT=1) so
+// the required single-repo CI `verify` lane (where siblings are NOT checked out)
+// stays green, while a developer machine or a dedicated suite job that DOES check
+// out the whole suite can still demand full cross-repo validation.
+const strictSuite = args.has("--suite") || /^(1|true|yes)$/i.test(process.env.OMC_SUITE_STRICT ?? "");
 
+// The self repo is always present at repoRoot; its inventory and posture are
+// validated strictly regardless of where suiteRoot points. The other entries are
+// sibling checkouts that may be absent on an isolated single-repo CI checkout.
+const selfRepo = "oh-my-antigravity";
 const suiteRepos = {
   "oh-my-cursor": { ceilings: { userInvocable: 5, agents: 6 } },
   "oh-my-copilot": { ceilings: { userInvocable: 5, agents: 6 } },
   "oh-my-grokbuild": { defaultSurface: "/omgb only" },
   "oh-my-antigravity": { posture: "private local-first no-telemetry no-publish" }
 };
+
+// Resolve a repo's on-disk root. The self repo lives at repoRoot (always present);
+// siblings live under suiteRoot/<repo> and may be absent.
+function repoPath(repo) {
+  return repo === selfRepo ? repoRoot : join(suiteRoot, repo);
+}
+
+// A sibling is "present" only if its checkout directory exists. The self repo is
+// always present. Absence of a sibling is a graceful skip unless strictSuite.
+function isRepoPresent(repo) {
+  return repo === selfRepo || existsSync(repoPath(repo));
+}
+
+const skipped = [];
+function addSkip(name, detail = {}) {
+  skipped.push({ name, skipped: true, ...detail });
+}
 
 const ignoredDirs = new Set([".git", "node_modules", "dist", "coverage", ".omx", ".omc"]);
 const ignoredBasenames = new Set(["package-lock.json", "LICENSE", "NOTICE.md"]);
@@ -92,7 +119,15 @@ function typeOfSurface(surface) {
 }
 
 function validateInventory(repo, policy) {
-  const inventoryPath = join(suiteRoot, repo, "docs", "surface-inventory.json");
+  if (!isRepoPresent(repo)) {
+    if (strictSuite) {
+      addCheck(`${repo}:surface-inventory`, false, { detail: `sibling repo absent at ${repoPath(repo)} (suite-strict)` });
+    } else {
+      addSkip(`${repo}:surface-inventory`, { detail: "sibling repo not checked out; suite-wide inventory check skipped" });
+    }
+    return;
+  }
+  const inventoryPath = join(repoPath(repo), "docs", "surface-inventory.json");
   if (!existsSync(inventoryPath)) {
     addCheck(`${repo}:surface-inventory`, false, { detail: "missing docs/surface-inventory.json" });
     return;
@@ -236,7 +271,15 @@ function auditAllAntigravityWorkflows() {
 
 function validateUnsupportedClaims() {
   for (const repo of Object.keys(suiteRepos)) {
-    const root = join(suiteRoot, repo);
+    if (!isRepoPresent(repo)) {
+      if (strictSuite) {
+        addCheck(`${repo}:unsupported-host-claims`, false, { detail: `sibling repo absent at ${repoPath(repo)} (suite-strict)` });
+      } else {
+        addSkip(`${repo}:unsupported-host-claims`, { detail: "sibling repo not checked out; host-claim scan skipped" });
+      }
+      continue;
+    }
+    const root = repoPath(repo);
     const files = listFiles(root).filter((path) => /^(README\.md|docs\/|\.github\/)/.test(path));
     const matches = [];
     for (const file of files) {
@@ -252,13 +295,28 @@ function validateUnsupportedClaims() {
 function validateNoCopiedGajaeFiles() {
   const sourceRoot = join(suiteRoot, ".analysis", "gajae-code");
   if (!existsSync(sourceRoot)) {
-    addCheck("suite:gajae-source-snapshot", false, { detail: "missing .analysis/gajae-code" });
+    // The gajae snapshot is a suite-wide fixture, not part of this repo's own
+    // checkout. Absent on an isolated CI checkout: skip the no-copy cross-check
+    // (logged) rather than fail the required lane. strictSuite still fails hard.
+    if (strictSuite) {
+      addCheck("suite:gajae-source-snapshot", false, { detail: `missing .analysis/gajae-code at ${sourceRoot} (suite-strict)` });
+    } else {
+      addSkip("suite:gajae-source-snapshot", { detail: ".analysis/gajae-code snapshot not present; no-copy cross-check skipped" });
+    }
     return;
   }
   const sourceHashes = new Map(listFiles(sourceRoot).map((path) => [hashFile(join(sourceRoot, path)), path]));
 
   for (const repo of Object.keys(suiteRepos)) {
-    const root = join(suiteRoot, repo);
+    if (!isRepoPresent(repo)) {
+      if (strictSuite) {
+        addCheck(`${repo}:no-exact-gajae-file-copy`, false, { detail: `sibling repo absent at ${repoPath(repo)} (suite-strict)` });
+      } else {
+        addSkip(`${repo}:no-exact-gajae-file-copy`, { detail: "sibling repo not checked out; no-copy check skipped" });
+      }
+      continue;
+    }
+    const root = repoPath(repo);
     const copied = [];
     for (const file of listFiles(root)) {
       const hash = hashFile(join(root, file));
@@ -275,12 +333,33 @@ validateAntigravityPosture();
 validateUnsupportedClaims();
 validateNoCopiedGajaeFiles();
 
+// Report absent siblings/fixtures (single-repo checkout). The self repo is always
+// validated strictly above; only the suite-wide cross-checks degrade to skips.
+const absentSiblings = Object.keys(suiteRepos).filter((repo) => repo !== selfRepo && !isRepoPresent(repo));
+const gajaeAbsent = !existsSync(join(suiteRoot, ".analysis", "gajae-code"));
+result.mode = strictSuite ? "suite-strict" : "self";
+result.skipped = skipped;
+
 if (jsonMode) {
   console.log(JSON.stringify(result, null, 2));
 } else {
   for (const check of result.checks) {
     console.log(`${check.ok ? "PASS" : "FAIL"} ${check.name}`);
   }
+  for (const entry of skipped) {
+    console.log(`SKIP ${entry.name}${entry.detail ? ` (${entry.detail})` : ""}`);
+  }
+}
+
+if (!strictSuite && (absentSiblings.length > 0 || gajaeAbsent)) {
+  const parts = [];
+  if (absentSiblings.length > 0) parts.push(`sibling repos absent: ${absentSiblings.join(", ")}`);
+  if (gajaeAbsent) parts.push(".analysis/gajae-code snapshot absent");
+  // Explicit, logged degradation so the gate is never silently false-green: the
+  // self repo posture/inventory were checked strictly; only suite-wide cross-repo
+  // checks were skipped. Run with `--suite` (or OMC_SUITE_STRICT=1) in a fully
+  // checked-out suite to require them.
+  console.error(`suite-verification: SELF mode (${parts.join("; ")}). Self-repo checks ran strictly; ${skipped.length} suite-wide cross-repo check(s) skipped. Use --suite for full cross-repo validation.`);
 }
 
 process.exit(result.ok ? 0 : 1);
