@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "repo": "oh-my-antigravity",
+  "package": "oh-my-antigrav",
+  "policy": {
+    "default_posture": "private local-first compact CLI loop",
+    "expansion_policy": "new default commands or public release posture require an explicit ADR",
+    "release_posture": "private-scaffold; no publish lane is active",
+    "telemetry": "absent",
+    "publishing": "inert"
+  },
+  "surfaces": [
+    {
+      "name": "oh-my-antigrav",
+      "kind": "runtime_entrypoint",
+      "classification": "default",
+      "path": "package.json#bin.oh-my-antigrav",
+      "first_run": true,
+      "rationale": "Canonical local CLI entrypoint for the compact scaffold.",
+      "validator": "npm run inventory:validate && npm run smoke:pack"
+    },
+    {
+      "name": "oag",
+      "kind": "runtime_entrypoint",
+      "classification": "advanced",
+      "path": "package.json#bin.oag",
+      "first_run": false,
+      "rationale": "Short alias for users who already know the canonical command; not part of the primary narrative.",
+      "validator": "npm run inventory:validate && npm run smoke:pack"
+    },
+    {
+      "name": "help",
+      "kind": "command",
+      "classification": "default",
+      "path": "src/cli.ts#help",
+      "first_run": true,
+      "rationale": "Shows the complete compact command surface before use.",
+      "validator": "npm run cli:help && npm run inventory:validate"
+    },
+    {
+      "name": "version",
+      "kind": "command",
+      "classification": "default",
+      "path": "src/cli.ts#version",
+      "first_run": true,
+      "rationale": "Confirms the private scaffold version without requiring local state.",
+      "validator": "npm run cli:version && npm run inventory:validate"
+    },
+    {
+      "name": "status",
+      "kind": "command",
+      "classification": "default",
+      "path": "src/commands/status.ts",
+      "first_run": true,
+      "rationale": "Machine-readable readiness contract for local-only/private/no-telemetry posture.",
+      "validator": "npm run cli:status && npm run inventory:validate"
+    },
+    {
+      "name": "init",
+      "kind": "command",
+      "classification": "default",
+      "path": "src/commands/init.ts",
+      "first_run": true,
+      "rationale": "Creates the local home required for routine use.",
+      "validator": "npm test -- --test-name-pattern init && npm run inventory:validate"
+    },
+    {
+      "name": "doctor",
+      "kind": "command",
+      "classification": "default",
+      "path": "src/commands/doctor.ts",
+      "first_run": true,
+      "rationale": "Verifies install health and local-only state before deeper use.",
+      "validator": "npm test -- --test-name-pattern doctor && npm run inventory:validate"
+    },
+    {
+      "name": "config",
+      "kind": "command",
+      "classification": "advanced",
+      "path": "src/commands/config.ts",
+      "first_run": false,
+      "rationale": "Mutable local configuration is supported after first-run setup; guarded keys preserve private/no-telemetry/no-publish guarantees.",
+      "validator": "npm test -- --test-name-pattern config && npm run inventory:validate"
+    },
+    {
+      "name": "skills",
+      "kind": "command",
+      "classification": "default",
+      "path": "src/commands/skills.ts",
+      "first_run": true,
+      "rationale": "Displays the four-stage default loop without exposing a broad skill zoo.",
+      "validator": "npm test -- --test-name-pattern skills && npm run inventory:validate"
+    },
+    {
+      "name": "loop",
+      "kind": "command",
+      "classification": "default",
+      "path": "src/commands/loop.ts",
+      "first_run": true,
+      "rationale": "Starts the compact routine session over deep-interview -> ralplan -> team -> ultragoal.",
+      "validator": "npm test -- --test-name-pattern loop && npm run inventory:validate"
+    },
+    {
+      "name": "session",
+      "kind": "command",
+      "classification": "advanced",
+      "path": "src/commands/session.ts",
+      "first_run": false,
+      "rationale": "Session inspection and clearing support ongoing local use after the first loop has been created.",
+      "validator": "npm test -- --test-name-pattern session && npm run inventory:validate"
+    },
+    {
+      "name": "deep-interview",
+      "kind": "skill",
+      "classification": "default",
+      "path": "src/project.ts#SKILLS",
+      "first_run": true,
+      "rationale": "First stage of the canonical local loop; requirements before build.",
+      "validator": "npm test -- --test-name-pattern skills && npm run inventory:validate"
+    },
+    {
+      "name": "ralplan",
+      "kind": "skill",
+      "classification": "default",
+      "path": "src/project.ts#SKILLS",
+      "first_run": true,
+      "rationale": "Second stage of the canonical local loop; consensus plan before execution.",
+      "validator": "npm test -- --test-name-pattern skills && npm run inventory:validate"
+    },
+    {
+      "name": "team",
+      "kind": "skill",
+      "classification": "default",
+      "path": "src/project.ts#SKILLS",
+      "first_run": true,
+      "rationale": "Third stage of the canonical local loop; bounded parallel execution.",
+      "validator": "npm test -- --test-name-pattern skills && npm run inventory:validate"
+    },
+    {
+      "name": "ultragoal",
+      "kind": "skill",
+      "classification": "default",
+      "path": "src/project.ts#SKILLS",
+      "first_run": true,
+      "rationale": "Fourth stage of the canonical local loop; durable completion ledger.",
+      "validator": "npm test -- --test-name-pattern skills && npm run inventory:validate"
+    },
+    {
+      "name": "release-readiness",
+      "kind": "doc_surface",
+      "classification": "internal",
+      "path": "docs/release-readiness.md",
+      "first_run": false,
+      "rationale": "Maintainer evidence record for status, pack smoke, and private posture; not marketed as a runtime feature.",
+      "validator": "npm run inventory:validate && npm run verify"
+    }
+  ]
+}

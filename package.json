@@ -42,11 +42,14 @@
     "prepack": "npm run build",
     "typecheck": "tsc --noEmit",
     "lint": "node ./scripts/verify.mjs --lint-only",
+    "inventory:validate": "node ./scripts/validate-surface-inventory.mjs",
+    "verify:suite": "node ./scripts/suite-verification.mjs",
+    "verify:suite:strict": "node ./scripts/suite-verification.mjs --suite",
     "test": "node --test",
     "audit:negative": "node ./scripts/verify.mjs --audit-only",
     "audit:deps": "npm audit --audit-level=high",
     "smoke:pack": "node ./scripts/pack-smoke.mjs",
-    "verify": "npm run typecheck && npm run lint && npm test && npm run cli:help && npm run cli:status && npm run cli:version && npm run audit:negative"
+    "verify": "npm run typecheck && npm run lint && npm run inventory:validate && npm test && npm run cli:help && npm run cli:status && npm run cli:version && npm run audit:negative"
   },
   "engines": {
     "node": ">=22"
