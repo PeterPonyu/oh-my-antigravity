@@ -2,11 +2,11 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const suiteRoot = dirname(repoRoot);
+const suiteRoot = process.env.SUITE_ROOT ? resolve(process.env.SUITE_ROOT) : dirname(repoRoot);
 const args = new Set(process.argv.slice(2));
 const jsonMode = args.has("--json");
 
@@ -24,6 +24,19 @@ const hostClaimPatterns = [
   /official(?:ly)?\s+(?:supported|endorsed|approved)\s+by\s+(?:Cursor|GitHub|Copilot|Google|Antigravity)/i,
   /(?:Cursor|GitHub|Copilot|Google|Antigravity)\s+(?:official(?:ly)?\s+)?(?:certified|endorsed|approved)\s+this/i
 ];
+const allowedClassifications = new Set(["default", "advanced", "internal", "deprecated"]);
+const allowedKinds = new Set([
+  "agent",
+  "command",
+  "doc_surface",
+  "hook",
+  "manifest",
+  "mcp_tool",
+  "role",
+  "runtime_entrypoint",
+  "script",
+  "skill"
+]);
 
 const result = { ok: true, checks: [] };
 
@@ -71,10 +84,7 @@ function field(surface, names) {
 }
 
 function isDefaultSurface(surface) {
-  const value = field(surface, ["default", "defaultEnabled", "default_enabled", "enabledByDefault", "enabled_by_default"]);
-  if (value === true) return true;
-  const classification = String(field(surface, ["classification", "exposure", "tier", "defaultPolicy", "default_policy"]) ?? "").toLowerCase();
-  return /\bdefault\b/.test(classification) && !/non-default|advanced|internal/.test(classification);
+  return String(field(surface, ["classification"]) ?? "").toLowerCase() === "default";
 }
 
 function typeOfSurface(surface) {
@@ -98,6 +108,25 @@ function validateInventory(repo, policy) {
 
   const surfaces = surfaceList(inventory);
   addCheck(`${repo}:surface-inventory`, surfaces.length > 0, { detail: `${surfaces.length} surfaces listed` });
+  const schemaErrors = [];
+  for (const [index, surface] of surfaces.entries()) {
+    const classification = field(surface, ["classification"]);
+    const kind = typeOfSurface(surface);
+    if (typeof classification !== "string" || !allowedClassifications.has(classification)) {
+      schemaErrors.push(`surface[${index}] unknown classification ${String(classification)}`);
+    }
+    if (!allowedKinds.has(kind)) {
+      schemaErrors.push(`surface[${index}] unknown kind ${String(kind)}`);
+    }
+    const firstRun = field(surface, ["first_run", "firstRun"]);
+    if (firstRun !== undefined && typeof firstRun !== "boolean") {
+      schemaErrors.push(`surface[${index}] first_run must be boolean`);
+    }
+  }
+  addCheck(`${repo}:surface-inventory-schema`, schemaErrors.length === 0, {
+    errors: schemaErrors.slice(0, 10),
+    totalErrors: schemaErrors.length
+  });
 
   if (policy.ceilings) {
     const defaults = surfaces.filter(isDefaultSurface);
