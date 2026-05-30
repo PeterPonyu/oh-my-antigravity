@@ -54,14 +54,21 @@ tarball. The attestation cryptographically links the published package back to t
 exact GitHub Actions workflow run, repository, ref, and commit SHA. Consumers can
 verify the attestation with `npm audit signatures` or the Sigstore transparency log.
 
-### Pre-staged workflow: .github/workflows/npm-publish.yml
+### Publish workflow: deliberately absent
 
-The file `.github/workflows/npm-publish.yml` is a WIP stub (issues #5 and #87).
-It declares the correct OIDC permission (`id-token: write`, `contents: read`) but
-all publish steps are hard no-ops guarded by the same `private: true` /
-`0.0.0-private` version check used in the release-please placeholder. The file
-exists so the permission scope, OIDC flow, and provenance flags are visible to
-reviewers before the lane is activated.
+There is **no** npm-publish workflow in this repository, and there must not be one
+while the package is a private pre-0.1.0 scaffold. A workflow that declares
+`id-token: write` (the OIDC publish-credential permission) is itself a
+package-publication credential path, so even a hard-no-op stub would contradict
+the strict private/local-first/no-telemetry/no-publish posture and the
+release-readiness claim that no workflow can request publication credentials.
+
+`scripts/verify.mjs` and `scripts/suite-verification.mjs` enforce this by auditing
+*every* workflow under `.github/workflows/` (not just `release-please.yml`) and
+failing on any `id-token: write` / publish-credential permission, any npm/pnpm/bun
+publish or release-creation command, or any OIDC token-exchange path. The OIDC flow
+and provenance flags below are documented here for the future reviewed release PR;
+the live workflow is created only as part of that PR.
 
 ### Five-step unblocking checklist (all must be reviewed together)
 
@@ -70,8 +77,10 @@ The live publish lane requires all five steps to land in a single reviewed PR:
 1. **Remove `private: true`** from `package.json` and set a real semver version.
 2. **Add `publishConfig`** (`{ "access": "public" }`) to `package.json`.
 3. **Whitelist** the publish command and release-please action in `scripts/verify.mjs`.
-4. **Wire the tag/release trigger** in `npm-publish.yml` (replace `workflow_dispatch`
-   with `on: release: types: [published]`, scoped to `v[0-9]+.*` tags).
+4. **Create the publish workflow** (`npm-publish.yml`) in that same PR with a
+   tag/release trigger (`on: release: types: [published]`, scoped to `v[0-9]+.*`
+   tags). No such workflow exists today, and the verifiers reject any workflow that
+   requests `id-token: write` or runs a publish command until this PR lands.
 5. **Configure the trusted publisher** on npmjs.com for this repository, workflow
    file (`npm-publish.yml`), and environment name (`npm-release`).
 

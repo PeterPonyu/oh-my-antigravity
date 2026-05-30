@@ -25,6 +25,9 @@ const forbidden = [
   /contents:\s*write|pull-requests:\s*write/i,
   /getIDToken\s*\(/i
 ];
+// id-token:write is handled separately by auditAllReleaseWorkflows() because the
+// OSSF Scorecard security-attestation workflow legitimately needs it; a blanket
+// rule here would false-positive on that supply-chain workflow.
 const jsonMetadataFiles = new Set(["package.json", "tsconfig.json"]);
 
 function fail(message) {
@@ -77,7 +80,14 @@ function scanForbiddenPatterns() {
     .map((path) => path.split(sep).join("/"))
     .filter((path) => !path.includes("node_modules"))
     .filter((path) => /\.(?:c?js|mjs|ts|json|ya?ml)$|^(?:package\.json|tsconfig\.json)$/.test(path))
-    .filter((path) => path !== "scripts/verify.mjs");
+    // The verifier scripts (and the audit's negative-test fixtures) legitimately
+    // contain the forbidden pattern literals as audit rules / test data; exclude
+    // these auditors and their fixtures from the scan so they cannot self-trip.
+    .filter((path) => ![
+      "scripts/verify.mjs",
+      "scripts/suite-verification.mjs",
+      "test/verify-workflow-audit.test.ts"
+    ].includes(path));
 
   for (const file of scanFiles) {
     const content = read(file);
@@ -85,6 +95,79 @@ function scanForbiddenPatterns() {
     for (const pattern of forbidden) {
       if (skipNetworkRule && pattern === networkClientPattern) continue;
       if (pattern.test(content)) fail(`forbidden active side-effect pattern ${pattern} in ${file}`);
+    }
+  }
+}
+
+// Patterns that mark a workflow as a publish/release-credential lane. Any of
+// these appearing in ANY workflow under .github/workflows/ fails the gate — not
+// only in release-please.yml. This is what makes the gate fail-closed against a
+// future (or rediscovered) npm-publish-style credential stub.
+const workflowCredentialRules = [
+  { name: "contents:write permission", pattern: /contents:\s*write/i },
+  { name: "pull-requests:write permission", pattern: /pull-requests:\s*write/i },
+  { name: "packages:write permission", pattern: /packages:\s*write/i },
+  { name: "npm/pnpm/bun publish command", pattern: /\b(?:npm|pnpm|bun)\s+publish\b/i },
+  { name: "gh release create command", pattern: /gh\s+release\s+create/i },
+  { name: "release-creation action", pattern: /release-please-action|googleapis\/release-please-action|softprops\/action-gh-release|JS-DevTools\/npm-publish/i },
+  { name: "OIDC token-exchange path", pattern: /getIDToken\s*\(|ACTIONS_ID_TOKEN_REQUEST_(?:URL|TOKEN)|oidc[-_ ]?token|trusted[- ]?publish/i }
+];
+
+const workflowsDir = ".github/workflows";
+
+function listWorkflowFiles() {
+  return walk(workflowsDir)
+    .map((path) => path.split(sep).join("/"))
+    .filter((path) => /\.ya?ml$/.test(path));
+}
+
+// id-token:write is the OIDC permission npm trusted publishing exchanges for a
+// registry token, so it is forbidden as a *package-publication* credential.
+// The one legitimate, non-publish use in this repo is OSSF Scorecard publishing
+// its supply-chain attestation to the public dashboard (security posture, not a
+// package release). That single use is allowlisted by a narrow signature:
+// ossf/scorecard-action + security-events:write + publish_results, and ONLY when
+// there is no npm-registry / publish / release context in the same workflow.
+function isScorecardSecurityAttestation(content) {
+  const npmPublishContext = /\b(?:npm|pnpm|bun)\s+publish\b|registry-url|NODE_AUTH_TOKEN|trusted[- ]?publish|npmjs\.(?:org|com)|--provenance/i;
+  return /ossf\/scorecard-action/i.test(content)
+    && /security-events:\s*write/i.test(content)
+    && /publish_results/i.test(content)
+    && !npmPublishContext.test(content);
+}
+
+// Audit EVERY release/publish workflow (all files under .github/workflows/), not
+// just release-please.yml. Fails on any publish-credential permission, publish or
+// release-creation command, or OIDC token-exchange path. id-token:write fails
+// unless it is the narrowly allowlisted OSSF Scorecard attestation use. Also
+// verifies that any workflow that is publish/release-shaped keeps the hard
+// private/version guard so it cannot move toward a release while the package is
+// a private 0.0.0-private scaffold.
+function auditAllReleaseWorkflows() {
+  const files = listWorkflowFiles();
+  if (files.length === 0) fail("no workflows found under .github/workflows/ to audit");
+
+  for (const file of files) {
+    const content = read(file);
+
+    if (/id-token:\s*write/i.test(content) && !isScorecardSecurityAttestation(content)) {
+      fail(`workflow ${file} requests id-token: write (OIDC publish credential) outside the allowlisted OSSF Scorecard attestation use — no workflow may request package-publication credentials in this private scaffold`);
+    }
+
+    for (const rule of workflowCredentialRules) {
+      if (rule.pattern.test(content)) {
+        fail(`workflow ${file} contains forbidden ${rule.name} — no workflow may request publish credentials or publish in this private scaffold`);
+      }
+    }
+
+    // Any workflow whose name/intent is release- or publish-shaped must keep the
+    // hard private/version guard so it stays inert for a 0.0.0-private package.
+    const looksReleaseShaped = /release|publish|npm/i.test(file) || /release|publish/i.test(content.split("\n")[0] ?? "");
+    if (looksReleaseShaped) {
+      const hasPrivateGuard = /0\.0\.0-private/.test(content) && /\.private === true/.test(content);
+      if (!hasPrivateGuard) {
+        fail(`release/publish-shaped workflow ${file} must keep the hard private/0.0.0-private guard so it cannot move toward a release`);
+      }
     }
   }
 }
@@ -112,6 +195,7 @@ function assertNegativeAuditIsLive() {
 
 if (args.has("--audit-only")) {
   assertNegativeAuditIsLive();
+  auditAllReleaseWorkflows();
   scanForbiddenPatterns();
   console.log("verify checks passed");
   process.exit(0);
@@ -172,6 +256,7 @@ if (!/release-readiness guard/i.test(releaseWorkflow)) fail("release workflow mu
 if (!/0\.0\.0-private/.test(releaseWorkflow) || !/\.private === true/.test(releaseWorkflow)) fail("release-readiness guard must block on private:true or version 0.0.0-private");
 
 assertNegativeAuditIsLive();
+auditAllReleaseWorkflows();
 if (!args.has("--lint-only")) scanForbiddenPatterns();
 
 console.log("verify checks passed");

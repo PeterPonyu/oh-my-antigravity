@@ -2,7 +2,7 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -177,6 +177,61 @@ function validateAntigravityPosture() {
     && /0\.0\.0-private/.test(releaseWorkflow), {
       detail: "manual dispatch, read-only permission, hard private-version guard"
     });
+
+  auditAllAntigravityWorkflows();
+}
+
+// Forbidden in ANY workflow under .github/workflows/ for the private no-publish
+// scaffold: publish-credential permissions, publish/release-creation commands,
+// and OIDC token-exchange paths. Audited across every workflow file, not just
+// release-please.yml, so a future npm-publish-style credential lane fails the gate.
+const antigravityWorkflowForbidden = [
+  { name: "contents:write", pattern: /contents:\s*write/i },
+  { name: "pull-requests:write", pattern: /pull-requests:\s*write/i },
+  { name: "packages:write", pattern: /packages:\s*write/i },
+  { name: "publish command", pattern: /\b(?:npm|pnpm|bun)\s+publish\b/i },
+  { name: "gh release create", pattern: /gh\s+release\s+create/i },
+  { name: "release-creation action", pattern: /release-please-action|softprops\/action-gh-release|JS-DevTools\/npm-publish/i },
+  { name: "OIDC token-exchange path", pattern: /getIDToken\s*\(|ACTIONS_ID_TOKEN_REQUEST_(?:URL|TOKEN)|trusted[- ]?publish/i }
+];
+
+// id-token:write is forbidden as a package-publication credential, with one
+// narrow allowlisted exception: OSSF Scorecard publishing its supply-chain
+// attestation (ossf/scorecard-action + security-events:write + publish_results,
+// and no npm-registry/publish context). That is a security workflow, not a
+// package release lane.
+function isScorecardSecurityAttestation(content) {
+  const npmPublishContext = /\b(?:npm|pnpm|bun)\s+publish\b|registry-url|NODE_AUTH_TOKEN|trusted[- ]?publish|npmjs\.(?:org|com)|--provenance/i;
+  return /ossf\/scorecard-action/i.test(content)
+    && /security-events:\s*write/i.test(content)
+    && /publish_results/i.test(content)
+    && !npmPublishContext.test(content);
+}
+
+function listAntigravityWorkflowFiles() {
+  const dir = join(repoRoot, ".github", "workflows");
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && /\.ya?ml$/.test(entry.name))
+    .map((entry) => entry.name);
+}
+
+function auditAllAntigravityWorkflows() {
+  const files = listAntigravityWorkflowFiles();
+  const offenders = [];
+  for (const name of files) {
+    const content = readFileSync(join(repoRoot, ".github", "workflows", name), "utf8");
+    if (/id-token:\s*write/i.test(content) && !isScorecardSecurityAttestation(content)) {
+      offenders.push(`${name}: id-token:write (publish credential, not allowlisted Scorecard attestation)`);
+    }
+    for (const rule of antigravityWorkflowForbidden) {
+      if (rule.pattern.test(content)) offenders.push(`${name}: ${rule.name}`);
+    }
+  }
+  addCheck("oh-my-antigravity:no-publish-credential-workflow", offenders.length === 0, {
+    audited: files,
+    offenders
+  });
 }
 
 function validateUnsupportedClaims() {
