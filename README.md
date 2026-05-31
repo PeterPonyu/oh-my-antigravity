@@ -29,6 +29,7 @@ node src/cli.ts config show            # inspect the local config
 node src/cli.ts config set loop "..."  # edit a mutable config key (guarded)
 node src/cli.ts skills                 # list the bundled loop skills
 node src/cli.ts loop "build X"         # start a routine session (scaffolds a plan)
+node src/cli.ts loop "build X" --run   # run available stages (deep-interview gates on ambiguity)
 node src/cli.ts session list           # inspect recorded sessions
 node examples/consume-status.mjs       # consume the status contract
 ```
@@ -40,7 +41,7 @@ node examples/consume-status.mjs       # consume the status contract
 | `doctor [--json]` | Checks Node version, home/config validity, state writability, and loop drift; exits non-zero on failure. |
 | `config [show\|get <key>\|set <key> <value>]` | Reads or edits the local config. Only safe keys are mutable; the local-only/no-telemetry/inert-publishing guarantees are enforced on `set`. |
 | `skills [list]` | Lists the bundled loop skills (`deep-interview`, `ralplan`, `team`, `ultragoal`) and their enabled state. |
-| `loop [prompt]` | Starts a routine session: records it under `state/sessions/<id>/` with `metadata.json` and a `plan.md` scaffolding the loop stages for the prompt. |
+| `loop [prompt] [--run] [--answers "<text>"]` | Starts a routine session: records it under `state/sessions/<id>/` with `metadata.json` and a `plan.md` scaffolding the loop stages. With `--run`, advances the available stages and records a durable `ledger.jsonl`; `deep-interview` deterministically scores ambiguity and either asks clarification questions or writes a `spec.md` (pending approval) with a verification receipt. `--answers` feeds clarification text back into the gate. The later stages (ralplan/team/ultragoal) are not yet implemented and report blocked. |
 | `session [list\|show <id>\|clear [--force]]` | Inspects or clears recorded sessions. `clear` is a dry-run unless `--force`. |
 
 Defaults are local-only, private, no telemetry, no publishing, and a minimal command surface. The package remains `private: true` until release blockers close.

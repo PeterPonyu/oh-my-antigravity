@@ -4,12 +4,17 @@ import { join } from "node:path";
 import { stateDir } from "./paths.ts";
 import { PROJECT, SKILLS } from "../project.ts";
 import { readConfig } from "./config.ts";
+import type { Receipt } from "./ledger.ts";
 
 type Env = Record<string, string | undefined>;
 
 export interface SessionStage {
   name: string;
-  status: "pending" | "done";
+  // "pending"|"done" are the original states; "in-progress"|"blocked" are added
+  // for the run path and only ever appear after a stage actually executes.
+  status: "pending" | "done" | "in-progress" | "blocked";
+  // Verification receipts produced while running the stage (run path only).
+  receipts?: Receipt[];
 }
 
 export interface Session {
@@ -19,6 +24,8 @@ export interface Session {
   loop: string;
   stages: SessionStage[];
   status: "planned" | "complete";
+  // Set by deep-interview once the clarity gate passes; absent until a stage runs.
+  ambiguityScore?: number;
 }
 
 function sessionsRoot(env: Env): string {
@@ -93,6 +100,17 @@ export function listSessions(env: Env = process.env): Session[] {
 export function readSession(id: string, env: Env = process.env): Session | null {
   const path = join(sessionsRoot(env), id, "metadata.json");
   return existsSync(path) ? readSessionFile(path) : null;
+}
+
+// Read metadata.json, apply a pure mutation, and write it back. The mutator
+// receives the current session and returns the next one; it must not mutate in
+// place. Throws if the session does not exist.
+export function updateSession(id: string, mutator: (session: Session) => Session, env: Env = process.env): Session {
+  const path = join(sessionsRoot(env), id, "metadata.json");
+  if (!existsSync(path)) throw new Error(`session not found: ${id}`);
+  const next = mutator(readSessionFile(path));
+  writeFileSync(path, `${JSON.stringify(next, null, 2)}\n`);
+  return next;
 }
 
 export function clearSessions(env: Env = process.env): number {
