@@ -81,6 +81,19 @@ export function runStage(
     status: "started"
   }, env);
 
+  // Mark the stage in-progress before running it, so a crash mid-stage leaves a
+  // visible state instead of looking like it never started.
+  updateSession(
+    sessionId,
+    (current) => ({
+      ...current,
+      stages: current.stages.map((stage) =>
+        stage.name === stageName ? { ...stage, status: "in-progress" } : stage
+      )
+    }),
+    env
+  );
+
   const ctx: StageContext = { sessionId, stage: stageName, prompt: session.prompt, input, env };
   const result = handler(ctx);
 

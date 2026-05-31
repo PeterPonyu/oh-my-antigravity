@@ -13,7 +13,7 @@ export const DEFAULT_AMBIGUITY_THRESHOLD = 0.4;
 // Verbs that signal a concrete goal ("build X", "fix Y").
 const GOAL_VERBS = /\b(build|create|add|implement|fix|refactor|write|design|support|migrate|remove|improve|generate|parse|render)\b/i;
 // Words that signal explicit constraints/scope.
-const CONSTRAINT_WORDS = /\b(must|should|only|without|constraint|require[ds]?|limit|no |offline|local|within|using|in\s+\w+\b)\b/i;
+const CONSTRAINT_WORDS = /\b(must|should|only|without|constraint|require[ds]?|limit|offline|local|within|using)\b/i;
 // Words that signal measurable acceptance criteria.
 const CRITERIA_WORDS = /\b(test|tests|pass(?:es|ing)?|verif|accept|criteri|done when|success|coverage|benchmark|metric|measur|so that)\b/i;
 

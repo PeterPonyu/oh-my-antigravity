@@ -7,6 +7,10 @@ type Env = Record<string, string | undefined>;
 // A durable, append-only JSONL ledger of everything a loop session does. One
 // JSON object per line; the file is never rewritten, only appended to, so it is
 // crash-safe-ish and portable across repos that adopt this schema.
+//
+// Concurrency: assumes a SINGLE writer per session (the current loop runs stages
+// sequentially). Concurrent cross-process appends are not yet coordinated; if a
+// later increment runs stages in parallel, add a lock or per-writer files.
 export type LedgerStatus = "started" | "ok" | "blocked" | "failed" | "info" | "verification";
 
 export interface LedgerEvent {
@@ -66,14 +70,21 @@ export function appendReceipt(id: string, stage: string, receipt: Receipt, env: 
 }
 
 // Read the whole ledger back as parsed events. Missing file => empty history.
-// Blank lines are skipped so a partially-flushed trailing write cannot crash a read.
+// Blank lines are skipped, and a torn/half-written (unparseable) line is skipped
+// rather than aborting the whole read, so a partial trailing write is tolerated.
 export function readLedger(id: string, env: Env = process.env): LedgerEvent[] {
   const path = ledgerPath(id, env);
   if (!existsSync(path)) return [];
-  return readFileSync(path, "utf8")
-    .split("\n")
-    .filter((line) => line.trim() !== "")
-    .map((line) => JSON.parse(line) as LedgerEvent);
+  const events: LedgerEvent[] = [];
+  for (const line of readFileSync(path, "utf8").split("\n")) {
+    if (line.trim() === "") continue;
+    try {
+      events.push(JSON.parse(line) as LedgerEvent);
+    } catch {
+      // Skip a malformed/partial line; the rest of the ledger is still readable.
+    }
+  }
+  return events;
 }
 
 // Collect every verification receipt recorded for a given stage, in order.

@@ -14,7 +14,9 @@ type Env = Record<string, string | undefined>;
 function flagValue(args: string[], flag: string): string | undefined {
   const index = args.indexOf(flag);
   if (index === -1 || index + 1 >= args.length) return undefined;
-  return args[index + 1];
+  const value = args[index + 1];
+  // Guard against `--answers --run`: a flag is never a value.
+  return value.startsWith("--") ? undefined : value;
 }
 
 // Positional prompt words: everything that is not a flag and not the value of a
@@ -41,7 +43,7 @@ function runLoop(session: Session, answers: string, env: Env): { lastStage: stri
     event: "run",
     status: "started",
     detail: session.prompt
-  });
+  }, env);
 
   let lastStage = "";
   let result: StageResult = { status: "blocked", detail: "no stages to run" };
@@ -118,7 +120,11 @@ export function loopCommand(args: string[], env: Env = process.env): number {
     ({ lastStage, result } = runLoop(session, answers, env));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`loop: failed to run session: ${message}`);
+    if (json) {
+      console.log(JSON.stringify({ error: message }, null, 2));
+    } else {
+      console.error(`loop: failed to run session: ${message}`);
+    }
     return 1;
   }
 
