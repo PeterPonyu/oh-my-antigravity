@@ -31,8 +31,10 @@ Commands:
                      Inspect or edit the local config.
   skills [list] [--json]
                      List the bundled loop skills and enabled state.
-  loop [prompt] [--json]
-                     Start a routine session (scaffolds a plan over the loop).
+  loop [prompt] [--json] [--run] [--answers "<text>"]
+                     Start a routine session (scaffolds a plan over the loop);
+                     --run advances available stages (deep-interview gates on
+                     ambiguity), --answers feeds clarification answers.
   session [list|show <id>|clear [--force]] [--json]
                      Inspect or clear recorded sessions.
 
