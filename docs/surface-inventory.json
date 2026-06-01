@@ -101,6 +101,24 @@
       "validator": "npm test -- --test-name-pattern loop && npm run inventory:validate"
     },
     {
+      "name": "approve",
+      "kind": "command",
+      "classification": "advanced",
+      "path": "src/commands/approve.ts",
+      "first_run": false,
+      "rationale": "Human consent gate: records the consent-gate receipt that the planning/execution boundary requires before ultragoal may run.",
+      "validator": "npm test -- --test-name-pattern approve && npm run inventory:validate"
+    },
+    {
+      "name": "verify-goal",
+      "kind": "command",
+      "classification": "advanced",
+      "path": "src/commands/verify-goal.ts",
+      "first_run": false,
+      "rationale": "Completion gate: records the per-goal verification receipt that is the only way a goal and the aggregate may complete.",
+      "validator": "npm test -- --test-name-pattern verify-goal && npm run inventory:validate"
+    },
+    {
       "name": "session",
       "kind": "command",
       "classification": "advanced",
