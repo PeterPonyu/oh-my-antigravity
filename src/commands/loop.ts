@@ -4,12 +4,10 @@ import { createSession, readSession, type Session } from "../lib/session.ts";
 import { initLedger, appendEvent } from "../lib/ledger.ts";
 import { runStage, type StageResult } from "../lib/dispatch.ts";
 import { stageReceipts } from "../lib/ledger.ts";
-import { readConfig } from "../lib/config.ts";
 // Importing the stages registers their handlers in the dispatch registry.
 import "../stages/deep-interview.ts";
 import "../stages/ralplan.ts";
 import "../stages/ultragoal.ts";
-import { SKILLS } from "../project.ts";
 
 type Env = Record<string, string | undefined>;
 
