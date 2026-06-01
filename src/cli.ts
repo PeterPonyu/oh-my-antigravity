@@ -7,6 +7,8 @@ import { configCommand } from "./commands/config.ts";
 import { skillsCommand } from "./commands/skills.ts";
 import { loopCommand } from "./commands/loop.ts";
 import { sessionCommand } from "./commands/session.ts";
+import { approveCommand } from "./commands/approve.ts";
+import { verifyGoalCommand } from "./commands/verify-goal.ts";
 import { formatCliError } from "./lib/errors.ts";
 
 function printHelp(): void {
@@ -33,8 +35,15 @@ Commands:
                      List the bundled loop skills and enabled state.
   loop [prompt] [--json] [--run] [--answers "<text>"]
                      Start a routine session (scaffolds a plan over the loop);
-                     --run advances available stages (deep-interview gates on
-                     ambiguity), --answers feeds clarification answers.
+                     --run advances stages: deep-interview (gates) -> ralplan
+                     (writes plan, stops at consent); ultragoal runs only after
+                     approval. --answers feeds clarification answers.
+  approve <session-id> [--json]
+                     Grant consent on a plan (records a consent-gate receipt);
+                     required before ultragoal will run.
+  verify-goal <session-id> <goal-id> [--json]
+                     Mark a goal verified (records a goal-verification receipt);
+                     the only way a goal — and the aggregate — completes.
   session [list|show <id>|clear [--force]] [--json]
                      Inspect or clear recorded sessions.
 
@@ -73,6 +82,10 @@ async function main(): Promise<number> {
       return skillsCommand(rest);
     case "loop":
       return loopCommand(rest);
+    case "approve":
+      return approveCommand(rest);
+    case "verify-goal":
+      return verifyGoalCommand(rest);
     case "session":
       return sessionCommand(rest);
     default:

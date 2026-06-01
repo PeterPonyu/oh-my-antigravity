@@ -3,9 +3,12 @@ import { stateDir } from "../lib/paths.ts";
 import { createSession, readSession, type Session } from "../lib/session.ts";
 import { initLedger, appendEvent } from "../lib/ledger.ts";
 import { runStage, type StageResult } from "../lib/dispatch.ts";
+import { stageReceipts } from "../lib/ledger.ts";
 import { readConfig } from "../lib/config.ts";
 // Importing the stages registers their handlers in the dispatch registry.
 import "../stages/deep-interview.ts";
+import "../stages/ralplan.ts";
+import "../stages/ultragoal.ts";
 import { SKILLS } from "../project.ts";
 
 type Env = Record<string, string | undefined>;
@@ -28,13 +31,17 @@ function extractPrompt(args: string[]): string {
     .trim();
 }
 
-function stageNames(env: Env): string[] {
-  const config = readConfig(env);
-  return config?.skills ?? SKILLS.map((skill) => skill.name);
+function consentGranted(sessionId: string, env: Env): boolean {
+  return stageReceipts(sessionId, "ralplan", env).some(
+    (r) => r.type === "consent-gate" && r.pass
+  );
 }
 
-// Run the available stages in order, stopping at the first one that does not
-// advance (deep-interview gates today; the rest are honest not-yet-implemented).
+// Run the staged pipeline. deep-interview gates on ambiguity; ralplan
+// synthesizes the plan and stops at the consent boundary (pending approval);
+// ultragoal runs ONLY after consent has been granted via `approve`. `team`
+// stays deferred (honest not-yet-implemented) and is never auto-run here. The
+// loop stops at the first stage that does not advance.
 function runLoop(session: Session, answers: string, env: Env): { lastStage: string; result: StageResult } {
   initLedger(session.id, env);
   appendEvent(session.id, {
@@ -45,13 +52,20 @@ function runLoop(session: Session, answers: string, env: Env): { lastStage: stri
     detail: session.prompt
   }, env);
 
-  let lastStage = "";
-  let result: StageResult = { status: "blocked", detail: "no stages to run" };
-  for (const name of stageNames(env)) {
-    lastStage = name;
-    result = runStage(session.id, name, { answers }, env);
-    if (result.status !== "ok") break;
-  }
+  let lastStage = "deep-interview";
+  let result = runStage(session.id, "deep-interview", { answers }, env);
+  if (result.status !== "ok") return { lastStage, result };
+
+  lastStage = "ralplan";
+  result = runStage(session.id, "ralplan", { answers }, env);
+  if (result.status !== "ok") return { lastStage, result };
+
+  // Consent gate (planning -> execution boundary): the pipeline stops at
+  // ralplan unless the user has approved the plan. Only then does ultragoal run.
+  if (!consentGranted(session.id, env)) return { lastStage, result };
+
+  lastStage = "ultragoal";
+  result = runStage(session.id, "ultragoal", { answers }, env);
   return { lastStage, result };
 }
 

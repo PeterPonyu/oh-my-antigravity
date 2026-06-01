@@ -26,6 +26,9 @@ export interface Session {
   status: "planned" | "complete";
   // Set by deep-interview once the clarity gate passes; absent until a stage runs.
   ambiguityScore?: number;
+  // Set by the `approve` command once the user grants consent on the plan;
+  // absent until consent is recorded. Mirrors the consent-gate receipt.
+  planApproved?: boolean;
 }
 
 function sessionsRoot(env: Env): string {
