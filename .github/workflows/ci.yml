@@ -47,6 +47,17 @@ jobs:
       # works on the engines lower bound (Node 22), where running .ts is unsupported.
       - run: npm run smoke:pack
 
+  e2e-real:
+    name: full user-journey e2e (deterministic)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm ci
+      - run: npm run e2e:real
+        timeout-minutes: 10
+
   workflow-lint:
     name: workflow-lint
     runs-on: ubuntu-latest
