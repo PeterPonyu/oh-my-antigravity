@@ -44,7 +44,7 @@ function addSkip(name, detail = {}) {
   skipped.push({ name, skipped: true, ...detail });
 }
 
-const ignoredDirs = new Set([".git", "node_modules", "dist", "coverage", ".omx", ".omc"]);
+const ignoredDirs = new Set([".git", "node_modules", "dist", "coverage", ".oh-my-antigrav"]);
 const ignoredBasenames = new Set(["package-lock.json", "LICENSE", "NOTICE.md"]);
 const supportedExtensions = /\.(?:md|json|ya?ml|ts|tsx|js|mjs|cjs)$/;
 const hostClaimPatterns = [
