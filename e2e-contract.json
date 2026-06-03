@@ -1,0 +1,10 @@
+{
+  "brand": "OAG",
+  "host": "self",
+  "hostClass": "standalone",
+  "evidenceDir": ".oag/evidence",
+  "journey": "init -> loop --json --run -> approve -> verify-goal",
+  "markerPrefix": "OAG",
+  "requiresSecret": false,
+  "npmScripts": ["e2e:structural", "e2e:headless", "e2e:real", "verify"]
+}
