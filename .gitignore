@@ -6,8 +6,8 @@ coverage/
 .env
 .env.*
 !.env.example
-.omc/
-.omx/
+# Project-local scratch/state home (oh-my-antigrav's own runtime dir)
+.oh-my-antigrav/
 *.tsbuildinfo
 .vscode/
 .idea/

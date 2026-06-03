@@ -6,6 +6,8 @@ oh-my-antigrav is an experimental beta, clean-room MVP scaffold for a compact co
 
 > Scope note: despite the name, oh-my-antigrav is currently a **standalone, local-first npm CLI** — it is not yet a Google Antigravity plugin and does not load into the Antigravity IDE or CLI. Genuine Antigravity-IDE integration is **planned, not yet implemented**; see [Antigravity integration status](#antigravity-integration-status) below.
 
+> Naming note: the canonical package and CLI name is **`oh-my-antigrav`** (bins `oh-my-antigrav` / `oag`, config home `~/.oh-my-antigrav`). The GitHub repository slug is **`oh-my-antigravity`** and is intentionally left unchanged — the shorter `oh-my-antigrav` was chosen because the npm name `antigravity` is taken and Google ships an "Antigravity" product. When you `git clone`/browse the repo you will see `oh-my-antigravity`; everything you install and invoke is `oh-my-antigrav`. The repo slug is the only place the longer form appears.
+
 ## Story
 
 I have used larger OpenAI-style, Anthropic-style, and Codex-style harnesses long enough to see the same pattern: the useful work collapses into a small loop, while the public surface keeps trying to grow. oh-my-antigrav starts from the opposite posture. It keeps the story, defaults, release discipline, and verification pressure, but refuses to import a broad skill zoo before the product earns it.

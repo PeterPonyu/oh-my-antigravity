@@ -218,7 +218,7 @@ assertIncludes("CHANGELOG.md", [/Unreleased/i, /pre-0\.1\.0/i]);
 assertIncludes("SECURITY.md", [/Reporting a vulnerability/i, /No released versions/i]);
 assertIncludes("CONTRIBUTING.md", [/PR routine/i, /npm run verify/i, /NOTICE.md/i]);
 assertIncludes(".github/CODEOWNERS", [/verify\.mjs/, /workflows/, /LICENSE/, /NOTICE/, /pr-train/]);
-assertIncludes(".gitignore", [/\.omc\//, /\.omx\//, /\*\.tsbuildinfo/]);
+assertIncludes(".gitignore", [/\.oh-my-antigrav\//, /\*\.tsbuildinfo/]);
 
 assertIncludes("README.md", [/oh-my-antigrav/, /experimental|beta/i, /deep-interview -> ralplan -> team -> ultragoal/, /no telemetry/i, /Lineage/i]);
 assertIncludes("LICENSE", [/MIT License/i, /Permission is hereby granted/i, /THE SOFTWARE IS PROVIDED/i]);
