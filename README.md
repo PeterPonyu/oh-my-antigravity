@@ -88,16 +88,17 @@ or run this tool.
 A genuine Antigravity plugin is a directory containing a `plugin.json` manifest (the marker file; `name`
 defaults to the directory name), plus optional components: an `mcp_config.json` for MCP servers, a
 `hooks.json` for event hooks, a `skills/` directory (each skill a subfolder with a `SKILL.md`), and a
-`rules/` directory of markdown guidance. Per Google's documentation, such a plugin is staged either
-globally under `~/.gemini/config/plugins/<plugin_name>/` or per-workspace under `.agents/plugins/` (also
-`_agents/plugins/`) at the workspace root. Shared MCP config lives at `~/.gemini/config/mcp_config.json`,
+`rules/` directory of markdown guidance. Per Google's documentation, such a plugin is staged
+globally under `~/.gemini/antigravity-cli/plugins/<plugin_name>/` (per-workspace staging under
+`.agents/plugins/`, mirroring the documented workspace skills path `.agents/skills/`, is unverified —
+confirm against current Antigravity docs). Shared MCP config lives at `~/.gemini/config/mcp_config.json`,
 and shared skills at `~/.gemini/skills/<skill_name>/`. Standing/agent instructions are supplied through
 `GEMINI.md` and `AGENTS.md` — globally at `~/.gemini/GEMINI.md` / `~/.gemini/AGENTS.md`, or per-project as
 `GEMINI.md` / `AGENTS.md` at the repo root (AGENTS.md being the cross-tool format).
 
 To ship real integration, this repo would need to emit that `plugin.json`-rooted layout (manifest,
 `skills/*/SKILL.md`, `rules/`, optional `mcp_config.json`/`hooks.json`) and a project `AGENTS.md`/`GEMINI.md`
-carrying the loop's standing instructions, installable under `~/.gemini/config/plugins/oh-my-antigrav/`.
+carrying the loop's standing instructions, installable under `~/.gemini/antigravity-cli/plugins/oh-my-antigrav/`.
 None of that exists yet; until it does, treat the "Antigravity" in the name as the design target, not a
 current capability. (Verify the exact directory and filenames against the current Antigravity docs at
 `antigravity.google/docs` before implementing, as the spec is still evolving.)
