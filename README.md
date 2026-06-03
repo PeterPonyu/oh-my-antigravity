@@ -4,6 +4,8 @@
 
 oh-my-antigrav is an experimental beta, clean-room MVP scaffold for a compact coding-agent harness routine.
 
+> Scope note: despite the name, oh-my-antigrav is currently a **standalone, local-first npm CLI** — it is not yet a Google Antigravity plugin and does not load into the Antigravity IDE or CLI. Genuine Antigravity-IDE integration is **planned, not yet implemented**; see [Antigravity integration status](#antigravity-integration-status) below.
+
 ## Story
 
 I have used larger OpenAI-style, Anthropic-style, and Codex-style harnesses long enough to see the same pattern: the useful work collapses into a small loop, while the public surface keeps trying to grow. oh-my-antigrav starts from the opposite posture. It keeps the story, defaults, release discipline, and verification pressure, but refuses to import a broad skill zoo before the product earns it.
@@ -17,7 +19,9 @@ deep-interview -> ralplan -> team -> ultragoal
 ## MVP surface
 
 oh-my-antigrav provides a local-first CLI. All commands run offline and write only
-under the oh-my-antigrav home (`~/.oh-my-antigrav`, or `$OH_MY_ANTIGRAV_HOME`).
+under the oh-my-antigrav home (`~/.oh-my-antigrav`, or `$OH_MY_ANTIGRAV_HOME`). It does
+**not** write to Antigravity's config directory (`~/.gemini`) and is invoked directly,
+not through the Antigravity IDE/CLI plugin loader — see [Antigravity integration status](#antigravity-integration-status).
 
 ```bash
 node src/cli.ts --help                 # command surface
@@ -70,6 +74,33 @@ installed CLI runs on the full `engines.node` range (>= 22) without type strippi
 CI exercises this on a Node 22 + 24 matrix via `npm run smoke:pack`.
 
 `npm run verify` is the canonical gate for this scaffold. It runs syntax checks, lint-style scaffold checks, tests, CLI smoke checks, and negative audits for active telemetry or publishing side effects.
+
+## Antigravity integration status
+
+**Not yet implemented.** oh-my-antigrav is named for, and inspired by, Google Antigravity, but it
+does not currently integrate with the Antigravity IDE or Antigravity CLI as a plugin. Today it is a
+self-contained npm CLI: you invoke it directly (`oh-my-antigrav ...` / `oag ...`), and it persists state
+under `~/.oh-my-antigrav`, never under Antigravity's own config tree. Antigravity cannot discover, load,
+or run this tool.
+
+### What a real Antigravity integration would require
+
+A genuine Antigravity plugin is a directory containing a `plugin.json` manifest (the marker file; `name`
+defaults to the directory name), plus optional components: an `mcp_config.json` for MCP servers, a
+`hooks.json` for event hooks, a `skills/` directory (each skill a subfolder with a `SKILL.md`), and a
+`rules/` directory of markdown guidance. Per Google's documentation, such a plugin is staged either
+globally under `~/.gemini/config/plugins/<plugin_name>/` or per-workspace under `.agents/plugins/` (also
+`_agents/plugins/`) at the workspace root. Shared MCP config lives at `~/.gemini/config/mcp_config.json`,
+and shared skills at `~/.gemini/skills/<skill_name>/`. Standing/agent instructions are supplied through
+`GEMINI.md` and `AGENTS.md` — globally at `~/.gemini/GEMINI.md` / `~/.gemini/AGENTS.md`, or per-project as
+`GEMINI.md` / `AGENTS.md` at the repo root (AGENTS.md being the cross-tool format).
+
+To ship real integration, this repo would need to emit that `plugin.json`-rooted layout (manifest,
+`skills/*/SKILL.md`, `rules/`, optional `mcp_config.json`/`hooks.json`) and a project `AGENTS.md`/`GEMINI.md`
+carrying the loop's standing instructions, installable under `~/.gemini/config/plugins/oh-my-antigrav/`.
+None of that exists yet; until it does, treat the "Antigravity" in the name as the design target, not a
+current capability. (Verify the exact directory and filenames against the current Antigravity docs at
+`antigravity.google/docs` before implementing, as the spec is still evolving.)
 
 ## Lineage and legal boundary
 
