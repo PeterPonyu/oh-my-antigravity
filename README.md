@@ -79,11 +79,23 @@ CI exercises this on a Node 22 + 24 matrix via `npm run smoke:pack`.
 
 ## Antigravity integration status
 
-**Not yet implemented.** oh-my-antigrav is named for, and inspired by, Google Antigravity, but it
-does not currently integrate with the Antigravity IDE or Antigravity CLI as a plugin. Today it is a
-self-contained npm CLI: you invoke it directly (`oh-my-antigrav ...` / `oag ...`), and it persists state
-under `~/.oh-my-antigrav`, never under Antigravity's own config tree. Antigravity cannot discover, load,
-or run this tool.
+**Minimal test-host integration only; full product integration not yet implemented.**
+oh-my-antigrav is named for, and inspired by, Google Antigravity. The full IDE/plugin
+integration (a `plugin.json`-rooted layout discovered by the Antigravity IDE) is still
+**planned, not implemented** — see "What a real Antigravity integration would require" below.
+
+What *does* exist today is a **minimal real-host test integration** under
+[`integrations/gemini/`](integrations/gemini/README.md): OAG ships an installable agent skill
+(`skills/oag-real-host/SKILL.md`) that loads into the real **Gemini / Antigravity CLI** via
+`gemini skills install` at the live shared discovery path `~/.gemini/skills/<name>/SKILL.md`.
+The e2e harness proves this load credential-free (`headless` and `live-host` tiers) and stages a
+genuine model-backed `real-host` tier. The `real-host` tier requires a gemini credential
+(`GEMINI_API_KEY` / Vertex / GCA) **and** an Antigravity-eligible account (the model is
+geo-restricted for some regions); without those it **SKIPS cleanly** rather than faking a pass.
+Aside from that test skill, OAG is still a self-contained npm CLI: you invoke it directly
+(`oh-my-antigrav ...` / `oag ...`), and it persists its own state under `~/.oh-my-antigrav`,
+never under Antigravity's config tree. The Antigravity IDE cannot yet discover or run OAG as a
+product plugin.
 
 ### What a real Antigravity integration would require
 

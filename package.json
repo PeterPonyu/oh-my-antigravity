@@ -50,7 +50,10 @@
     "audit:deps": "npm audit --audit-level=high",
     "smoke:pack": "node ./scripts/pack-smoke.mjs",
     "e2e:structural": "OAG_E2E_STRUCTURAL=1 bash scripts/local/e2e.sh",
-    "e2e:headless": "OAG_E2E_STRUCTURAL=1 bash scripts/local/e2e.sh",
+    "e2e:headless": "OAG_E2E_HEADLESS=1 bash scripts/local/e2e.sh",
+    "e2e:live-host": "OAG_E2E_LIVE_HOST=1 bash scripts/local/e2e.sh",
+    "e2e:self": "OAG_E2E_SELF=1 bash scripts/local/e2e.sh",
+    "e2e:real-host": "OAG_E2E_REAL_HOST=1 bash scripts/local/e2e.sh",
     "e2e:real": "OAG_E2E_REAL=1 bash scripts/local/e2e.sh",
     "verify": "npm test && npm run e2e:structural && npm run verify:suite"
   },
