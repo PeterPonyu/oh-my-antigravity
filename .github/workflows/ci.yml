@@ -59,6 +59,19 @@ jobs:
       - run: npm run e2e:real
         timeout-minutes: 10
 
+  e2e-headless:
+    name: headless e2e (credential-free)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with: { node-version: '24', cache: npm }
+      - run: npm ci
+      - run: npm install -g @google/gemini-cli
+      - run: npm run e2e:headless
+        timeout-minutes: 10
+
   workflow-lint:
     name: workflow-lint
     runs-on: ubuntu-latest
