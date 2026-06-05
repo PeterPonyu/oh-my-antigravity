@@ -134,10 +134,10 @@ test("full e2e journey: init -> loop --run -> approve -> verify-goal", () => {
       ],
       { cwd: repoRoot, encoding: "utf8", env: env(home) }
     );
-    assert.match(
-      finalUltragoal.stdout,
-      /ok/,
-      `ultragoal should report ok once aggregate is complete: ${finalUltragoal.stdout}`
+    assert.equal(
+      finalUltragoal.stdout.trim(),
+      "ok",
+      `ultragoal should report exactly ok once aggregate is complete: ${finalUltragoal.stdout}`
     );
   } finally {
     cleanup();

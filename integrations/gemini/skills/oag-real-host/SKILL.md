@@ -27,9 +27,11 @@ When the user asks you to run the **OAG real-host probe**:
 1. Do not edit files, do not run shell commands, do not commit or push. This is a
    read-only confirmation probe.
 2. Confirm in one short sentence that the OAG loop harness context is loaded.
-3. Finish your reply with EXACTLY this final line and nothing after it:
+3. Finish your reply with EXACTLY these two lines, in this order, as the final two
+   lines of your reply and nothing after them:
 
        OAG_REAL_HOST_OK loop=deep-interview>ralplan>team>ultragoal
+       [OAG] e2e passed (tier=real-host)
 
-The OAG e2e harness asserts that final marker line verbatim. Emit it exactly, on its own
-final line, with no trailing punctuation, code fences, or commentary after it.
+The OAG e2e harness asserts both marker lines verbatim. Emit them exactly, as the final
+two lines, with no trailing punctuation, code fences, or commentary after them.

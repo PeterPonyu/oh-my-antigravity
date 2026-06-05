@@ -139,7 +139,17 @@ provision_isolated_gemini() { # installs SKILL into a fresh isolated gemini home
 run_live_host_proof() {
   local shared="$HOME/.gemini/skills/$SKILL_NAME"
   local preexisting=0
+  local backup=""
   [[ -e "$shared" ]] && preexisting=1
+  # DATA-SAFETY: never clobber a user's pre-existing same-named skill. If one
+  # exists, back it up verbatim now and restore it byte-for-byte afterward.
+  if [[ $preexisting -eq 1 ]]; then
+    backup="$(mktemp -d /tmp/oag-live-host-backup.XXXXXX)/oag-real-host"
+    if ! cp -a "$shared" "$backup"; then
+      fail "live-host: could not back up pre-existing skill at $shared; aborting tier to avoid clobbering it"
+    fi
+    log "[OAG] live-host: pre-existing skill detected at $shared; backed up to $backup (will be restored verbatim)"
+  fi
   log "[OAG] live-host: installing into real shared dir $HOME/.gemini/skills (preexisting=$preexisting)"
   set +e
   printf 'y\n' | timeout 90 "$GEMINI_BIN" skills install "$SKILL_SRC" --scope user >>"$LOG" 2>&1
@@ -155,16 +165,22 @@ run_live_host_proof() {
   printf "%s\n" "$listing" | grep -Eq "^$SKILL_NAME[[:space:]]+\[Enabled\]" \
     || fail "live-host: gemini skills list did not show '$SKILL_NAME [Enabled]' at the real path"
   log "[OAG] live-host: skill discoverable [Enabled] at $shared/SKILL.md"
-  # Clean up unless it pre-existed (don't remove a skill the user already had).
-  if [[ $preexisting -eq 0 ]]; then
+  if [[ $preexisting -eq 1 ]]; then
+    # Restore the user's original skill verbatim (we overwrote it with OAG's).
+    rm -rf "$shared"
+    if ! cp -a "$backup" "$shared"; then
+      fail "live-host: FAILED to restore pre-existing skill from $backup to $shared (user skill backup preserved at $backup)"
+    fi
+    rm -rf "$(dirname "$backup")" 2>/dev/null || true
+    log "[OAG] live-host: restored user's pre-existing skill verbatim at $shared"
+  else
+    # Skill did not pre-exist: uninstall so the real skills dir is left clean.
     set +e
     printf 'y\n' | timeout 90 "$GEMINI_BIN" skills uninstall "$SKILL_NAME" --scope user >>"$LOG" 2>&1
     set -e
     [[ ! -e "$shared" ]] || fail "live-host: failed to clean up $shared after proof"
     rmdir "$HOME/.gemini/skills" 2>/dev/null || true   # remove dir only if now empty
     log "[OAG] live-host: uninstalled; real skills dir left clean"
-  else
-    log "[OAG] live-host: skill pre-existed; left installed (not created by this run)"
   fi
 }
 
@@ -242,24 +258,32 @@ if [[ "$OAG_E2E_REAL_HOST" == "1" ]]; then
     exit 0
   }
   if [[ $REAL_RC -ne 0 ]]; then
-    if grep -qiE 'set an Auth method|GEMINI_API_KEY|GOOGLE_GENAI_USE|please.*(login|sign in)|auth' "$STDERR_FILE" "$STDOUT_FILE"; then
-      maybe_skip "gemini not authenticated headlessly (need GEMINI_API_KEY / GOOGLE_GENAI_USE_VERTEXAI / GOOGLE_GENAI_USE_GCA)"
+    # Only genuine auth/eligibility/geo blocks are eligible for a clean SKIP.
+    # exit 41 is gemini's dedicated "no usable auth" code. Everything else
+    # (CLI regression, bad flags, network errors, broken skill invocation) is a
+    # REAL FAILURE — never silently skipped.
+    if [[ $REAL_RC -eq 41 ]] \
+       || grep -qiE 'set an Auth method|GEMINI_API_KEY|GOOGLE_GENAI_USE|please.*(login|sign in)|credential|\bauth\b|login|not eligible|Eligibility check failed|not available in your location' "$STDERR_FILE" "$STDOUT_FILE"; then
+      maybe_skip "gemini auth/eligibility/geo block (need GEMINI_API_KEY / GOOGLE_GENAI_USE_VERTEXAI / GOOGLE_GENAI_USE_GCA, an Antigravity-eligible, geo-permitted account)"
     fi
-    if grep -qiE 'not eligible|Eligibility check failed|not available in your location|geo' "$STDERR_FILE" "$STDOUT_FILE"; then
-      maybe_skip "account not eligible for Antigravity in this location (geo-restricted)"
-    fi
-    maybe_skip "real gemini call exited $REAL_RC (see $LOG)"
+    # Non-auth non-zero exit ⇒ a real regression. Fail hard regardless of the
+    # skip policy (do NOT route through maybe_skip).
+    fail "real gemini call exited $REAL_RC for a non-auth reason (CLI regression / bad flags / network / broken skill invocation — see $LOG)"
   fi
-  [[ -s "$STDOUT_FILE" ]] || maybe_skip "real gemini call returned empty stdout despite exit 0"
+  [[ -s "$STDOUT_FILE" ]] || fail "real gemini call returned empty stdout despite exit 0"
 
   # HARD gate: the model must return BOTH the marker token AND the skill-only loop
-  # proof string (which lives only in SKILL.md, never in the prompt). Both present
-  # ⇒ the model genuinely read OAG's skill context.
+  # proof string (which lives only in SKILL.md, never in the prompt), AND the exact
+  # final marker LINE must be present. All three ⇒ the model genuinely read OAG's
+  # skill context and the harness reached its terminal pass state.
   if ! grep -q 'OAG_REAL_HOST_OK' "$STDOUT_FILE"; then
     fail "real gemini output missing marker OAG_REAL_HOST_OK"
   fi
   if ! grep -q 'deep-interview>ralplan>team>ultragoal' "$STDOUT_FILE"; then
     fail "real gemini output missing skill-only loop proof string (model did not read OAG skill)"
+  fi
+  if ! grep -qxF '[OAG] e2e passed (tier=real-host)' "$STDOUT_FILE"; then
+    fail "real gemini output missing exact final marker line '[OAG] e2e passed (tier=real-host)'"
   fi
   log "[OAG] real model returned OAG_REAL_HOST_OK with skill-load proof (exit $REAL_RC)"
   write_result "gemini" "real-host" "skill install -> gemini -p model call -> OAG_REAL_HOST_OK" "true"
