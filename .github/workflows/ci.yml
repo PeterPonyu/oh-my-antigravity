@@ -48,16 +48,22 @@ jobs:
       # works on the engines lower bound (Node 22), where running .ts is unsupported.
       - run: npm run smoke:pack
 
-  e2e-real:
+  e2e-self:
     name: full user-journey e2e (deterministic)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with: { node-version: '22' }
       - run: npm ci
-      - run: npm run e2e:real
+      # e2e:self is the deterministic credential-free self-journey this job's
+      # name promises. The genuine model-backed tier lives in the dispatch-only
+      # e2e-real-required job (it installs gemini-cli and uses the secret);
+      # e2e:real here could never pass — no gemini CLI, no credential.
+      - run: npm run e2e:self
         timeout-minutes: 10
 
   e2e-headless:
