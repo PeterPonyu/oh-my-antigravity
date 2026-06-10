@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency:
   group: verify-${{ github.workflow }}-${{ github.ref }}
@@ -73,6 +74,26 @@ jobs:
       - run: npm install -g @google/gemini-cli@0.45.0
       - run: npm run e2e:headless
         timeout-minutes: 10
+
+  e2e-real-required:
+    name: real-host e2e (credential required, dispatch only)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with: { node-version: '24', cache: npm }
+      - run: npm ci
+      - run: npm install -g @google/gemini-cli@0.45.0
+      - name: run real-host e2e (hard-fail)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OAG_E2E_REQUIRE_REAL: '1'
+        run: npm run e2e:real
+        timeout-minutes: 15
 
   workflow-lint:
     name: workflow-lint
