@@ -54,7 +54,7 @@ node examples/consume-status.mjs       # consume the status contract
 | `verify-goal <session-id> <goal-id>` | Records a `goal-verification` receipt for a single goal. This is the completion gate: a goal — and the aggregate — is complete only once every goal has a passing verification receipt; completion is never faked. |
 | `session [list\|show <id>\|clear [--force]]` | Inspects or clears recorded sessions. `clear` is a dry-run unless `--force`. |
 
-Defaults are local-only, private, no telemetry, no publishing, and a minimal command surface. The package remains `private: true` until release blockers close.
+Defaults are local-only, private, no telemetry, no publishing, and a minimal command surface. The package version is `0.0.0-private` (`"private": true`); it is not published to npm — run it from source (`node src/cli.ts`) until release blockers close.
 
 ## Documentation
 
@@ -77,13 +77,52 @@ CI exercises this on a Node 22 + 24 matrix via `npm run smoke:pack`.
 
 `npm run verify` is the canonical gate for this scaffold. It runs syntax checks, lint-style scaffold checks, tests, CLI smoke checks, and negative audits for active telemetry or publishing side effects.
 
+## E2E testing
+
+The harness (`scripts/local/e2e.sh`) exposes five tiers. Tiers are mutually exclusive;
+the first matching flag wins. The default (self-journey) is always credential-free.
+
+| Tier | Activation flag | What it proves | Credential needed |
+|---|---|---|---|
+| `structural` | `OAG_E2E_STRUCTURAL=1` | Build + surface inventory + in-repo skill payload valid | None |
+| `headless` | `OAG_E2E_HEADLESS=1` | Real `gemini` binary discovers/enables the skill (isolated home) | None |
+| `live-host` | `OAG_E2E_LIVE_HOST=1` | Skill discoverable in real `~/.gemini/skills` (installs then uninstalls cleanly) | None |
+| `real-host` | `OAG_E2E_REAL_HOST=1` | Genuine `gemini -p` model call returns OAG marker (`OAG_REAL_HOST_OK`) | `GEMINI_API_KEY` + Antigravity-eligible account |
+| *(self-journey)* | *(default / `OAG_E2E_SELF=1`)* | Deterministic own-binary journey (`init→loop→approve→verify-goal`) | None |
+
+**Cross-repo aliases** — `OMX_E2E_STRUCTURAL`, `OMX_E2E_HEADLESS`, and `OMX_E2E_REAL` are
+canonical cross-repo flags that map to their `OAG_E2E_*` equivalents (set either form).
+`OAG_E2E_REAL` is a further alias for `OAG_E2E_REAL_HOST`.
+
+**Skip-by-default / hard-fail mode** — when the gemini credential or Antigravity
+eligibility is absent, the `real-host` tier **skips cleanly** (exit 0,
+`status=skipped`, no false pass) so a default `npm run verify` or gated CI lane is
+not broken. To require a real pass:
+
+```bash
+OAG_E2E_REQUIRE_REAL=1 npm run e2e:real          # hard-fail if model call cannot reach green
+OAG_E2E_ALLOW_REAL_HOST_SKIP=0 npm run e2e:real  # equivalent via the allow-skip flag
+```
+
 ## Antigravity integration status
 
-**Not yet implemented.** oh-my-antigrav is named for, and inspired by, Google Antigravity, but it
-does not currently integrate with the Antigravity IDE or Antigravity CLI as a plugin. Today it is a
-self-contained npm CLI: you invoke it directly (`oh-my-antigrav ...` / `oag ...`), and it persists state
-under `~/.oh-my-antigrav`, never under Antigravity's own config tree. Antigravity cannot discover, load,
-or run this tool.
+**Minimal test-host integration only; full product integration not yet implemented.**
+oh-my-antigrav is named for, and inspired by, Google Antigravity. The full IDE/plugin
+integration (a `plugin.json`-rooted layout discovered by the Antigravity IDE) is still
+**planned, not implemented** — see "What a real Antigravity integration would require" below.
+
+What *does* exist today is a **minimal real-host test integration** under
+[`integrations/gemini/`](integrations/gemini/README.md): OAG ships an installable agent skill
+(`skills/oag-real-host/SKILL.md`) that loads into the real **Gemini / Antigravity CLI** via
+`gemini skills install` at the live shared discovery path `~/.gemini/skills/<name>/SKILL.md`.
+The e2e harness proves this load credential-free (`headless` and `live-host` tiers) and stages a
+genuine model-backed `real-host` tier. The `real-host` tier requires a gemini credential
+(`GEMINI_API_KEY` / Vertex / GCA) **and** an Antigravity-eligible account (the model is
+geo-restricted for some regions); without those it **SKIPS cleanly** rather than faking a pass.
+Aside from that test skill, OAG is still a self-contained npm CLI: you invoke it directly
+(`oh-my-antigrav ...` / `oag ...`), and it persists its own state under `~/.oh-my-antigrav`,
+never under Antigravity's config tree. The Antigravity IDE cannot yet discover or run OAG as a
+product plugin.
 
 ### What a real Antigravity integration would require
 

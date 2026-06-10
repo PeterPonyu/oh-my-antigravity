@@ -1,0 +1,24 @@
+{
+  "brand": "OAG",
+  "host": "gemini",
+  "hostClass": "standalone",
+  "evidenceDir": ".oag/evidence",
+  "journey": "gemini skills install oag-real-host -> gemini -p model call -> OAG_REAL_HOST_OK",
+  "markerPrefix": "OAG",
+  "requiresSecret": true,
+  "npmScripts": ["e2e:structural", "e2e:headless", "e2e:live-host", "e2e:self", "e2e:real-host", "e2e:real", "verify"],
+  "realHost": "gemini/antigravity-cli",
+  "antigravitySkillPaths": {
+    "global": "~/.gemini/antigravity-cli/skills/<name>/SKILL.md",
+    "shared": "~/.gemini/skills/<name>/SKILL.md",
+    "workspace": "<cwd>/.agents/skills/<name>/SKILL.md"
+  },
+  "realHostRequirements": "GEMINI_API_KEY (or GOOGLE_GENAI_USE_VERTEXAI / GOOGLE_GENAI_USE_GCA) AND an Antigravity-eligible account (model is geo-restricted for some regions). Absent these, the real-host tier SKIPS cleanly (status=skipped, no pass marker).",
+  "tiers": {
+    "structural": { "host": "self", "requiresSecret": false, "journey": "build+inventory+skill-payload" },
+    "headless": { "host": "gemini", "requiresSecret": false, "journey": "isolated skills install -> skills list [Enabled]" },
+    "live-host": { "host": "gemini", "requiresSecret": false, "journey": "install into real ~/.gemini/skills -> [Enabled] -> uninstall (clean)" },
+    "self-journey": { "host": "self", "requiresSecret": false, "journey": "init -> loop --json --run -> approve -> verify-goal" },
+    "real-host": { "host": "gemini", "requiresSecret": true, "skippableWhenNoSecret": true, "journey": "skills install -> gemini -p model call -> OAG_REAL_HOST_OK" }
+  }
+}

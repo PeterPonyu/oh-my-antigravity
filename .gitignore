@@ -8,6 +8,8 @@ coverage/
 !.env.example
 # Project-local scratch/state home (oh-my-antigrav's own runtime dir)
 .oh-my-antigrav/
+# E2E evidence dir
+.oag/
 *.tsbuildinfo
 .vscode/
 .idea/
