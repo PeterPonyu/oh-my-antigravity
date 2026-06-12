@@ -124,6 +124,12 @@ Aside from that test skill, OAG is still a self-contained npm CLI: you invoke it
 never under Antigravity's config tree. The Antigravity IDE cannot yet discover or run OAG as a
 product plugin.
 
+The repo also intentionally does **not** ship root-level `AGENTS.md` or `GEMINI.md` standing
+instruction files yet. Those files are part of the future product-integration surface, where
+the Antigravity IDE/CLI would load OAG instructions from a real plugin/workspace layout. Until
+that layout exists, adding root stubs would imply host integration that users cannot actually
+install or exercise from this repository.
+
 ### What a real Antigravity integration would require
 
 A genuine Antigravity plugin is a directory containing a `plugin.json` manifest (the marker file; `name`
